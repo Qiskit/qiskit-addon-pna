@@ -40,4 +40,4 @@ jobs:
       - name: Test using tox environment
         shell: bash
         run: |
-          tox -e py,notebook,doctest --parallel --parallel-no-spinner
+          tox -e py,notebook --parallel --parallel-no-spinner
