@@ -1,1 +1,1 @@
-# WRITE ME
+# Qiskit addon: propagated noise absorption (PNA)
