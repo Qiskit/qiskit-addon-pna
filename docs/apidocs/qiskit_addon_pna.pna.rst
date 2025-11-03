@@ -9,4 +9,4 @@ ChIP (:mod:`qiskit_addon_pna.pna`)
 
 .. currentmodule:: qiskit_addon_pna.pna
 
-.. autofunction:: generate_noise_mitigated_observable
+.. autofunction:: generate_noise_mitigating_observable
