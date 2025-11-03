@@ -46,13 +46,13 @@ nbtest = [
     "nbmake>=1.5.0",
 ]
 style = [
-    "ruff==0.11.12",
+    "ruff==0.14.3",
     "nbqa>=1.8.5",
 ]
 lint = [
     "qiskit-addon-pna[style]",
     "mypy==1.18.2",
-    "pylint==3.3.7",
+    "pylint==4.0.2",
     "reno>=4.1",
     "toml>=0.9.6",
 ]
