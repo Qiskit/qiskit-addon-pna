@@ -114,10 +114,6 @@ plot_html_show_source_link = False
 
 _inlined_apis = [
     ("qiskit_addon_pna.pna", "chip_noisy_circuit"),
-    ("qiskit_addon_pna.utils", "debox_circuit"),
-    ("qiskit_addon_pna.utils", "inject_learned_noise_to_boxed_circuit"),
-    ("qiskit_addon_pna.utils", "keep_k_largest"),
-    ("qiskit_addon_pna.utils", "pauli_lindblad_map_to_layer_error"),
 ]
 
 redirects = {

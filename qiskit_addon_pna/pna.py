@@ -16,7 +16,6 @@
 import multiprocessing as mp
 import multiprocessing.sharedctypes
 import time
-import warnings
 from collections import deque
 
 import numpy as np
@@ -30,8 +29,8 @@ from pauli_prop.propagation import (
 from qiskit.circuit import CircuitInstruction, QuantumCircuit
 from qiskit.quantum_info import Pauli, PauliLindbladMap, PauliList, SparsePauliOp
 from qiskit_aer.noise.errors import PauliLindbladError
-
-from .utils import inject_learned_noise_to_boxed_circuit, keep_k_largest
+from samplomatic.annotations import InjectNoise
+from samplomatic.utils import get_annotation, undress_box
 
 circuit_as_rot_gates: RotationGates
 obs_ready_for_generator_idx: multiprocessing.sharedctypes.Synchronized
@@ -41,19 +40,20 @@ obs_current_length: multiprocessing.sharedctypes.Synchronized
 coeffs_shared_np: np.ndarray
 
 
-def generate_noise_mitigated_observable(
+def generate_noise_mitigating_observable(
     boxed_circuit: QuantumCircuit,
     refs_to_noise_model_map: dict[str, tuple[PauliLindbladMap, CircuitInstruction]],
     observable: SparsePauliOp | Pauli,
-    max_err_terms: int = 1000,
-    max_obs_terms: int = 1000,
+    *,
+    max_err_terms: int,
+    max_obs_terms: int,
     search_step: int = 4,
     num_processes: int = 1,
     print_progress: bool = False,
     atol: float = 1e-8,
     batch_size: int = 1,
 ) -> SparsePauliOp:
-    """Generate a noise-mitigated observable using Pauli evolution.
+    """Generate a noise-mitigating observable using Pauli propagation.
 
     Args:
         boxed_circuit: Boxed circuit containing InjectNoise annotations.
@@ -126,7 +126,7 @@ def generate_noise_mitigated_observable(
     obs_ready_for_generator_idx = mp.RawValue("i", batch_size)
 
     # Strip boxes and inject Aer PauliLindbladError instructions
-    noisy_circuit = inject_learned_noise_to_boxed_circuit(
+    noisy_circuit = _inject_learned_noise_to_boxed_circuit(
         boxed_circuit,
         refs_to_noise_model_map,
         include_barriers=False,
@@ -200,7 +200,7 @@ def generate_noise_mitigated_observable(
                 if num_unfinished_this_batch == 0 or num_unfinished_total == 0:
                     observable += SparsePauliOp.sum(new_terms_this_batch)
                     observable = observable.simplify(atol=0)
-                    observable = keep_k_largest(
+                    observable = _keep_k_largest(
                         observable, max_obs_terms, ignore_pauli_phase=True, copy=False
                     )[0]
 
@@ -341,10 +341,6 @@ def _evolve_and_apply_generator(
 
     norm_reduction = float(np.linalg.norm(evolved.coeffs) / np.linalg.norm(generator.coeffs))
     if norm_reduction > 1 + max(atol, float(np.finfo(np.float64).resolution)):
-        warnings.warn(
-            f"{norm_reduction = } should be <= 1. This can result from truncating before merging duplicate Pauli terms.",
-            stacklevel=1,
-        )
         norm_reduction = 1.0
 
     while True:
@@ -373,3 +369,190 @@ def _evolve_and_apply_generator(
         time.sleep(0.001)
 
     return new_terms
+
+
+def _inject_learned_noise_to_boxed_circuit(
+    boxed_circuit: QuantumCircuit,
+    refs_to_pauli_lindblad_maps: dict[str, tuple[PauliLindbladMap, CircuitInstruction]],
+    include_barriers: bool = False,
+    remove_final_measurements: bool = True,
+) -> QuantumCircuit:
+    """Generate an unboxed circuit with the noise injected as ``PauliLindbladError`` instructions.
+
+    Args:
+        boxed_circuit: A `QuantumCircuit` with boxes and `InjectNoise` annotations for 2-qubit layers.
+        refs_to_pauli_lindblad_maps: A dictionary mapping `InjectNoise.ref` to corresponding `PauliLindbladMap` and `CircuitInstruction`.
+        include_barriers: A boolean to decide whether or not to insert barriers around `LayerError` instructions.
+        remove_final_measurements: If `True` remove any boxed final measure instructions from the circuit.
+
+    Returns:
+        A `QuantumCircuit` without boxes and with `PauliLindbladError` instructions inserted according to the given mapping.
+    """
+    unboxed_noisy_circuit = QuantumCircuit.copy_empty_like(boxed_circuit)
+    last_instruction_idx = len(boxed_circuit.data) - 1
+    for idx, inst in enumerate(boxed_circuit.data):
+        if inst.name == "box":
+            box = inst.operation
+
+            # getting the qargs of the circuit instruction in an ordered fashion,
+            # so they can be used for mapping the box instruction to the correct qubits
+            # in the new unboxed circuit
+            ordered_instruction_qargs = [
+                q for q in unboxed_noisy_circuit.qubits if q in inst.qubits
+            ]
+
+            injected_noise = get_annotation(box, InjectNoise)
+            if injected_noise is not None:
+                assert injected_noise.ref in refs_to_pauli_lindblad_maps
+                pauli_lindblad_map = refs_to_pauli_lindblad_maps[injected_noise.ref]
+
+                if include_barriers:
+                    unboxed_noisy_circuit.barrier()
+
+                # A noise model exists for that layer --> inject it before the 2q gates in the layer
+                # Creating a PLE instruction
+                noise_instruction = _pauli_lindblad_map_to_layer_error(pauli_lindblad_map)
+
+                if include_barriers:
+                    unboxed_noisy_circuit.barrier()
+
+                # the undressed box is needed in order to know where to inject the noise
+                undressed_box = undress_box(box)
+
+                # The noise needs to be injected right before the 2q-gate corresponding
+                # instructions. Therefore, if the original box is starting with a 1q-gate instruction
+                # it means the box was 'left-dressed' and we should start be adding the 1q-gate instructions
+                # before injecting the noise. Essentially ending up with the following instructions order:
+                #   1. the box's left dressing 1q-gate instructions
+                #   2. the injected noise instruction
+                #   3. the box's 2q-gate instructions
+                # If the box is staring with a 2q-gate instruction it means it was originally `right-dressed`
+                # so we should start with injecting the noise and then add the rest instruction. Essentially
+                # ending up with the following instructions order:
+                #   1. the injected noise instruction
+                #   2. the box's 2q-gate instructions
+                #   3. the box's right dressing 1q-gate instructions
+                if box.body.data[0].operation.num_qubits == 1:
+                    # add the 1q-gates that were removed from the undressed box first
+                    for internal_instruction in box.body:
+                        if internal_instruction not in undressed_box.body:
+                            unboxed_noisy_circuit.append(
+                                instruction=internal_instruction,
+                                qargs=ordered_instruction_qargs,
+                            )
+
+                    # inject the noise second
+                    unboxed_noisy_circuit.append(
+                        noise_instruction,
+                        qargs=ordered_instruction_qargs,
+                    )
+                    # add the 2q-gates
+                    for internal_instruction in box.body:
+                        if internal_instruction in undressed_box.body:
+                            unboxed_noisy_circuit.append(
+                                instruction=internal_instruction,
+                                qargs=ordered_instruction_qargs,
+                            )
+                else:
+                    # inject the noise first (because there are no 1q-gates to add before)
+                    unboxed_noisy_circuit.append(
+                        noise_instruction,
+                        qargs=ordered_instruction_qargs,
+                    )
+                    # add the 2q-gate and 1q-gate instructions in order
+                    for internal_instruction in box.body:
+                        unboxed_noisy_circuit.append(
+                            instruction=internal_instruction,
+                            qargs=ordered_instruction_qargs,
+                        )
+
+            # add the inner box instructions as is (the box does not have relevant InjectNoise annotation)
+            # we assume that measurements does not have the InjectNoise annotation.
+            else:
+                # this is to close with a barrier on the previous box
+                if include_barriers:
+                    unboxed_noisy_circuit.barrier()
+
+                # removing any measurements if it is the last box in the circuit
+                if remove_final_measurements and idx == last_instruction_idx:
+                    # removing measures
+                    for internal_instruction in box.body:
+                        if internal_instruction.name == "measure":
+                            continue
+                        else:
+                            unboxed_noisy_circuit.append(
+                                internal_instruction,
+                                qargs=ordered_instruction_qargs,
+                            )
+                # add all other instructions in order
+                else:
+                    for internal_instruction in box.body:
+                        unboxed_noisy_circuit.append(
+                            instruction=internal_instruction,
+                            qargs=ordered_instruction_qargs,
+                        )
+
+        # add the original instruction as is (it does not have a box)
+        else:
+            unboxed_noisy_circuit.append(instruction=inst)
+
+    return unboxed_noisy_circuit
+
+
+def _pauli_lindblad_map_to_layer_error(pauli_lindblad_map: PauliLindbladMap) -> PauliLindbladError:
+    """Creates a PauliLindbladError instruction from a PauliLindbladMap.
+
+    Args:
+        pauli_lindblad_map: A PauliLindbladMap.
+
+    Returns:
+        A PauliLindbladError circuit instruction
+    """
+    sparse_list = pauli_lindblad_map.to_sparse_list()
+    spare_pauli_op = SparsePauliOp.from_sparse_list(sparse_list, pauli_lindblad_map.num_qubits)
+    noise_instruction = PauliLindbladError(spare_pauli_op.paulis, spare_pauli_op.coeffs)
+    return noise_instruction
+
+
+def _keep_k_largest(
+    operator: SparsePauliOp,
+    k: int | None = None,
+    normalize: bool = False,
+    ignore_pauli_phase=False,
+    copy=True,
+) -> tuple[SparsePauliOp, float]:
+    """Keep the ``k`` terms in ``operator`` that have the largest coefficient magnitude.
+
+    Args:
+        operator: The Sparse Pauli Operator to truncate.
+        k: The number of terms to keep after truncation.
+        normalize: Should the operator's coefficients be normalized, defaults to False.
+        ignore_pauli_phase: Ignoring the operator's Pauli phase, defaults to False.
+        copy: Copy the data if possible, defaults to True.
+
+    Returns:
+        A tuple of the truncated `SparsePauliOp` and its norm.
+    """
+    init_onenorm = np.abs(operator.coeffs).sum()
+
+    if k == 0:
+        return 0 * operator, init_onenorm
+
+    if k is not None and len(operator) > k:
+        ordering = np.argpartition(np.abs(operator.coeffs), kth=-k)[-k:]
+    else:
+        ordering = np.arange(len(operator))
+
+    kept = SparsePauliOp(
+        operator.paulis[ordering],
+        operator.coeffs[ordering],
+        ignore_pauli_phase=ignore_pauli_phase,
+        copy=copy,
+    )
+
+    if normalize:
+        kept.coeffs *= np.linalg.norm(operator.coeffs) / np.linalg.norm(kept.coeffs)
+
+    trunc_onenorm = init_onenorm - np.abs(kept.coeffs).sum()
+
+    return kept, trunc_onenorm
