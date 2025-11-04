@@ -1,8 +1,8 @@
 # Propagated noise absorption (PNA)
 
 PNA is a technique for mitigating gate noise affecting observable expectation values by propagating
-the observable through the inverse of the learned noise channel. This results in a new observable,
-that when measured against the noisy state, mitigates the learned noise.
+the observable through the inverse of the learned noise channel. This results in a new observable
+that, when measured against the noisy state, mitigates the learned noise.
 
 ### Overview
 Executing entangling gates on modern QPUs results in a substantial amount of noise. Until fault
@@ -15,7 +15,7 @@ It is possible to learn and efficiently characterize this gate noise as a Pauli-
 as shown in probabilistic error cancellation (PEC), we can mitigate the error by implementing the
 anti-noise, $\Lambda^{-1}$, with a QPU sampling protocol [cite pec]. Other techniques, such as
 tensor-network error mitigation (TEM), implement the inverse noise channel as a classical
-post-processing step.
+post-processing step [cite TEM].
 
 ![Noise-mitigated picture](docs/images/noise_mitigated_expt.png)
 
