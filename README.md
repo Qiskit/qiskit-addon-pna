@@ -1,8 +1,8 @@
 # Propagated noise absorption (PNA)
 
 PNA is a technique for mitigating gate noise affecting observable expectation values by propagating
-the observable through the inverse of the learned noise channel. This results in a new observable,
-that when measured against the noisy state, mitigates the learned noise.
+the observable through the inverse of the learned noise channel. This results in a new observable
+that, when measured against the noisy state, mitigates the learned noise.
 
 ----------------------------------------------------------------------------------------------------
 
@@ -25,7 +25,7 @@ post-processing step.
 Like TEM, PNA implements the inverse noise channel in a classical processing step. While TEM uses
 tensor networks to describe and apply the noise-mitigating map to a set of informationally complete
 measurements, PNA uses Pauli propagation to propagate the observable through the inverse noise
-channel. This results in a new observable that when measured against the noisy state, mitigates the
+channel. This results in a new observable that, when measured against the noisy state, mitigates the
 learned noise.
 
 ![PNA picture](docs/images/pna_overview.png)
