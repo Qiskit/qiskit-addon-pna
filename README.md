@@ -7,7 +7,7 @@ that, when measured against the noisy state, mitigates the learned noise.
 ### Overview
 Executing entangling gates on modern QPUs results in a substantial amount of noise. Until fault
 tolerant devices are available, ideal entangling gates, $\mathcal{U}$, will not be available.
-Entangling gates will be affected by some noise channel, $\Lambda$.
+They will instead be affected by some noise channel, $\Lambda$.
 
 ![Noisy experiment](docs/images/noisy_expt.png)
 
