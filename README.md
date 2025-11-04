@@ -18,14 +18,14 @@ It is possible to learn and efficiently characterize this gate noise as a Pauli-
 as shown in probabilistic error cancellation (PEC), we can mitigate the error by implementing the
 anti-noise, $\Lambda^{-1}$, with a QPU sampling protocol [cite pec]. Other techniques, such as
 tensor-network error mitigation (TEM), implement the inverse noise channel as a classical
-post-processing step.
+post-processing step [cite TEM].
 
 ![Noise-mitigated picture](docs/images/noise_mitigated_expt.png)
 
 Like TEM, PNA implements the inverse noise channel in a classical processing step. While TEM uses
 tensor networks to describe and apply the noise-mitigating map to a set of informationally complete
 measurements, PNA uses Pauli propagation to propagate the observable through the inverse noise
-channel. This results in a new observable that, when measured against the noisy state, mitigates the
+channel [cite PP]. This results in a new observable that, when measured against the noisy state, mitigates the
 learned noise.
 
 ![PNA picture](docs/images/pna_overview.png)
