@@ -1,6 +1,6 @@
 # Propagated noise absorption (PNA)
 
-PNA is a technique for mitigating gate noise affecting observable expectation values by propagating
+PNA is a technique for mitigating errors in observable expectation values by propagating
 the observable through the inverse of the learned noise channel. This results in a new observable
 that, when measured against the noisy state, mitigates the learned noise.
 
