@@ -2,8 +2,8 @@
 
 PNA is a technique for mitigating errors in observable expectation values by "absorbing" the
 inverse of a learned noise channel into the observable using Pauli propagation. Each Pauli
-noise generator in the noise model is propagated to the end of the circuit and through the
-observable, resulting in a new observable that, when measured, mitigates the learned gate noise.
+noise generator in the noise model is classically propagated to the end of the circuit and through the
+observable, resulting in a new observable that when measured on a QPU, mitigates the learned gate noise.
 
 ### Overview
 Executing entangling gates on modern QPUs results in a substantial amount of noise. Until fault
