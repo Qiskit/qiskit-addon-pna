@@ -1,4 +1,4 @@
-# Propagated noise absorption (PNA)
+# Qiskit addon: Propagated noise absorption (PNA)
 
 PNA is a technique for mitigating errors in observable expectation values by "absorbing" the
 inverses of the learned noise channels into the observable using [Pauli propagation](https://qiskit.github.io/pauli-prop/). Each Pauli
