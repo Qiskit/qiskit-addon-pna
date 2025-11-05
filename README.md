@@ -2,12 +2,13 @@
 
 PNA is a technique for mitigating errors in observable expectation values by "absorbing" the
 inverses of the learned noise channels into the observable using Pauli propagation. Each Pauli
-noise generator in the noise model is classically propagated to the end of the circuit and through the
-observable, resulting in a new observable that when measured on a QPU, mitigates the learned gate noise.
+noise generator in the noise model is classically propagated to the end of the circuit and applied
+to the observable, resulting in a new observable that when measured on a QPU, mitigates the
+learned gate noise.
 
 ### Overview
-Executing entangling gates on modern QPUs results in a substantial amount of noise. Until fully fault
-tolerant devices are available, ideal entangling gates, $\mathcal{U}$, will not be available.
+Executing entangling gates on modern QPUs results in a substantial amount of noise. Until fully
+fault tolerant devices are available, ideal entangling gates, $\mathcal{U}$, will not be available.
 They will instead be affected by some noise channel, $\Lambda$.
 
 ![Noisy experiment](docs/images/noisy_expt.png)
@@ -23,8 +24,8 @@ post-processing step [cite TEM].
 Like TEM, PNA implements the inverse noise channel in a classical processing step. While TEM uses
 tensor networks to describe and apply the noise-mitigating map to a set of informationally complete
 measurements, PNA uses Pauli propagation to propagate the observable, $O$, through the inverse noise
-channel. This results in a new observable, $\tilde{O}$, that when measured against the noisy state, mitigates the
-learned noise.
+channel. This results in a new observable, $\tilde{O}$, that when measured against the noisy state,
+mitigates the learned noise.
 
 ![PNA picture](docs/images/pna_overview.png)
 
@@ -37,14 +38,15 @@ as $O(2^N)$ towards a maximum of $4^M$ unique Pauli components. To control the c
 terms with small coefficients must be truncated, which results in some error in the evolved
 anti-noise channel.
 
-2. In addition to the truncation of the evolved anti-noise channel, $\Lambda^{-1}$, $\tilde{O}$ must also
-be truncated as it is propagated through $\Lambda^{-1}$. Of course, this is also a source of
-bias in the final mitigated expectation value.
+2. In addition to the truncation of the evolved anti-noise channel, $\Lambda^{-1}$, $\tilde{O}$ is
+also truncated as it is propagated through $\Lambda^{-1}$. This is also a source of bias in the
+final mitigated expectation value.
 
 3. While letting $\tilde{O}$ grow larger during propagation will increase its accuracy, measuring it
-requires taking many more shots on the QPU. It is often practical and sufficient to only measure the
-largest terms in $\tilde{O}$; however, one does not generally know the optimal number of terms to
-measure for a given $\tilde{O}$ calculation.
+requires taking many more shots on the QPU. Typicall this increases the coefficients of the original
+Pauli terms in $O$, along with creating many new Pauli terms with smaller coefficients. Both the
+rescaling of the original coefficients and the creation of new terms can increase sampling overhead.
+In practice, we truncate once more by measuring only the largest terms in $\tilde{O}$
 
 ----------------------------------------------------------------------------------------------------
 
