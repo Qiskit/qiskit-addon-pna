@@ -1,7 +1,7 @@
 # Propagated noise absorption (PNA)
 
 PNA is a technique for mitigating errors in observable expectation values by "absorbing" the
-inverses of the learned noise channels into the observable using Pauli propagation. Each Pauli
+inverses of the learned noise channels into the observable using [Pauli propagation](https://qiskit.github.io/pauli-prop/). Each Pauli
 noise generator in the noise model is classically propagated to the end of the circuit and applied
 to the observable, resulting in a new observable that when measured on a QPU, mitigates the
 learned gate noise.
@@ -15,9 +15,9 @@ They will instead be affected by some noise channel, $\Lambda$.
 
 It is possible to learn and efficiently characterize this gate noise as a Pauli-Lindblad model, and
 as shown in probabilistic error cancellation (PEC), we can mitigate the error by implementing the
-anti-noise, $\Lambda^{-1}$, with a QPU sampling protocol [cite pec]. Other techniques, such as
+anti-noise, $\Lambda^{-1}$, with a QPU sampling protocol [1]. Other techniques, such as
 tensor-network error mitigation (TEM), implement the inverse noise channel as a classical
-post-processing step [cite TEM].
+post-processing step [2].
 
 ![Noise-mitigated picture](docs/images/noise_mitigated_expt.png)
 
@@ -97,3 +97,7 @@ By participating, you are expected to uphold Qiskit's [code of conduct](https://
 ----------------------------------------------------------------------------------------------------
 
 ### References
+
+[1] Ewout van den Berg, et al., [Probabilistic error cancellation with sparse Pauli-Lindblad models on noisy quantum processors](https://arxiv.org/abs/2201.09866), arXiv:2201.09866 [quant-ph].
+
+[2] Sergei Filippov, et al., [Scalable tensor-network error mitigation for near-term quantum computing](https://arxiv.org/abs/2307.11740), arXiv:2307.11740 [quant-ph].
