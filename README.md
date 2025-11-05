@@ -43,7 +43,7 @@ also truncated as it is propagated through $\Lambda^{-1}$. This is also a source
 final mitigated expectation value.
 
 3. While letting $\tilde{O}$ grow larger during propagation will increase its accuracy, measuring it
-requires taking many more shots on the QPU. Typicall this increases the coefficients of the original
+requires taking many more shots on the QPU. Typically this increases the coefficients of the original
 Pauli terms in $O$, along with creating many new Pauli terms with smaller coefficients. Both the
 rescaling of the original coefficients and the creation of new terms can increase sampling overhead.
 In practice, we truncate once more by measuring only the largest terms in $\tilde{O}$
