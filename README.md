@@ -41,15 +41,15 @@ be truncated as it is propagated through $\Lambda^{-1}$. Of course, this is also
 bias in the final mitigated expectation value.
 
 3. While letting $\tilde{O}$ grow larger during propagation will increase its accuracy, measuring it
-becomes more costly. It is often practical and sufficient to only measure the largest terms in $\tilde{O}$;
-however, one does not generally know the optimal number of terms to measure for a given $\tilde{O}$
-calculation.
+requires taking many more shots on the QPU. It is often practical and sufficient to only measure the
+largest terms in $\tilde{O}$; however, one does not generally know the optimal number of terms to
+measure for a given $\tilde{O}$ calculation.
 
 ----------------------------------------------------------------------------------------------------
 
 ### Documentation
 
-All documentation is available at https://qiskit.github.io/pauli-prop/.
+All documentation is available at https://qiskit.github.io/qiskit-addon-pna/.
 
 ----------------------------------------------------------------------------------------------------
 
