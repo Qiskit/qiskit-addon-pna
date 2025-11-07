@@ -86,7 +86,7 @@ def generate_noise_mitigating_observable(
 
             If this circuit is not boxed, the noise model is expected to be embedded as ``PauliLindbladError`` instructions adjacent
             to each circuit layer for which gate noise should be mitigated. In this case, ``refs_to_noise_model_map`` may be None.
-        observable: The observable which will absorb the anti-noise.
+        observable: The observable which will absorb the anti-noise. T
         refs_to_noise_model_map: A dictionary mapping noise injection referencs IDs to their corresponding noise models as
             ``PauliLindbladMap``. If ``noisy_circuit`` is not boxed and contains ``PauliLindbladError`` instructions from `qiskit-aer`,
             this mapping is not needed.
@@ -114,6 +114,8 @@ def generate_noise_mitigating_observable(
         ValueError: The circuit and observable have mismatching sizes
         ValueError: num_processes and batch_size must be >= 1
         ValueError: ``max_obs_terms`` should be larger than the length of ``observable``
+        ValueError: Incompatible noisy circuit and refs_to_noise_model_map
+        ValueError: The observable must only contain real-valued coefficients
     """
     if observable.num_qubits != noisy_circuit.num_qubits:
         raise ValueError(f"{observable.num_qubits = } does not match {noisy_circuit.num_qubits = }")
@@ -143,7 +145,7 @@ def generate_noise_mitigating_observable(
     np.copyto(x_shared_np[: x.shape[0], : x.shape[1]], x)
 
     if not np.allclose(observable.coeffs.imag, 0):
-        raise NotImplementedError("Coeffs must be real.")
+        raise ValueError("Coeffs must be real.")
     coeffs = observable.coeffs.real
     ctype = np.ctypeslib.as_ctypes_type(coeffs.dtype)
     coeffs_max_shape = (max_obs_terms,)
@@ -409,7 +411,7 @@ def _evolve_and_apply_generator(
 
 def _inject_learned_noise_to_boxed_circuit(
     boxed_circuit: QuantumCircuit,
-    refs_to_pauli_lindblad_maps: dict[str, PauliLindbladMap],
+    refs_to_pauli_lindblad_maps: dict[str, PauliLindbladMap] | None,
     include_barriers: bool = False,
     remove_final_measurements: bool = True,
     inject_noise_before: bool = True,
@@ -440,9 +442,11 @@ def _inject_learned_noise_to_boxed_circuit(
 
             injected_noise = get_annotation(box, InjectNoise)
             if injected_noise is not None:
-                assert injected_noise.ref in refs_to_pauli_lindblad_maps, (
-                    f"ref: {injected_noise.ref} is missing from Pauli Lindblad Map."
-                )
+
+                if refs_to_pauli_lindblad_maps is None:
+                    raise ValueError("The circuit contains a noisy box, but refs_to_pauli_lindeblad_maps is None.")
+                if injected_noise.ref not in refs_to_pauli_lindblad_maps:
+                    raise ValueError(f"ref: {injected_noise.ref} is missing from Pauli Lindblad Map.")
                 pauli_lindblad_map = refs_to_pauli_lindblad_maps[injected_noise.ref]
 
                 if include_barriers:
