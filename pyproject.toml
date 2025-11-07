@@ -26,7 +26,7 @@ dependencies = [
     "qiskit>=2.1.2, <3",
     "numpy>=1.26",
     "qiskit-aer>=0.17",
-    "samplomatic>=0.10.1",
+    "samplomatic>=0.12",
     "pauli-prop",
 ]
 

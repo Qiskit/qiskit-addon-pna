@@ -5,4 +5,4 @@
 .. toctree::
    :maxdepth: 1
 
-   qiskit_addon_pna.pna
+   qiskit_addon_pna

@@ -113,16 +113,8 @@ plot_html_show_source_link = False
 # ----------------------------------------------------------------------------------
 
 _inlined_apis = [
-    ("qiskit_addon_pna.pna", "chip_noisy_circuit"),
+    ("qiskit_addon_pna.pna", "generate_noise_mitigating_observable"),
 ]
-
-redirects = {
-    "apidocs/qiskit_addon_pna": "./index.html",
-    **{
-        f"stubs/{module}.{name}": f"../apidocs/{module}.html#{module}.{name}"
-        for module, name in _inlined_apis
-    },
-}
 
 # ----------------------------------------------------------------------------------
 # Source code links
