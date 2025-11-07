@@ -442,11 +442,14 @@ def _inject_learned_noise_to_boxed_circuit(
 
             injected_noise = get_annotation(box, InjectNoise)
             if injected_noise is not None:
-
                 if refs_to_pauli_lindblad_maps is None:
-                    raise ValueError("The circuit contains a noisy box, but refs_to_pauli_lindeblad_maps is None.")
+                    raise ValueError(
+                        "The circuit contains a noisy box, but refs_to_pauli_lindeblad_maps is None."
+                    )
                 if injected_noise.ref not in refs_to_pauli_lindblad_maps:
-                    raise ValueError(f"ref: {injected_noise.ref} is missing from Pauli Lindblad Map.")
+                    raise ValueError(
+                        f"ref: {injected_noise.ref} is missing from Pauli Lindblad Map."
+                    )
                 pauli_lindblad_map = refs_to_pauli_lindblad_maps[injected_noise.ref]
 
                 if include_barriers:
