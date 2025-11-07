@@ -14,3 +14,7 @@
 # If we ever publicly expose interfaces users can import from this module,
 # we should set up its RST file.
 """Primary propagated noise absortption (PNA) functionality."""
+
+from .pna import generate_noise_mitigating_observable
+
+__all__ = ["generate_noise_mitigating_observable"]

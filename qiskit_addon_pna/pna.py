@@ -26,7 +26,7 @@ from pauli_prop.propagation import (
     propagate_through_operator,
     propagate_through_rotation_gates,
 )
-from qiskit.circuit import CircuitInstruction, QuantumCircuit
+from qiskit.circuit import QuantumCircuit
 from qiskit.quantum_info import Pauli, PauliLindbladMap, PauliList, SparsePauliOp
 from qiskit_aer.noise.errors import PauliLindbladError
 from samplomatic.annotations import InjectNoise
@@ -41,9 +41,9 @@ coeffs_shared_np: np.ndarray
 
 
 def generate_noise_mitigating_observable(
-    boxed_circuit: QuantumCircuit,
-    refs_to_noise_model_map: dict[str, tuple[PauliLindbladMap, CircuitInstruction]],
+    noisy_circuit: QuantumCircuit,
     observable: SparsePauliOp | Pauli,
+    refs_to_noise_model_map: dict[str, PauliLindbladMap] | None = None,
     *,
     max_err_terms: int,
     max_obs_terms: int,
@@ -53,14 +53,45 @@ def generate_noise_mitigating_observable(
     atol: float = 1e-8,
     batch_size: int = 1,
 ) -> SparsePauliOp:
-    """Generate a noise-mitigating observable using Pauli propagation.
+    r"""Generate a noise-mitigating observable by propagating it through the inverse of a learned noise channel.
+
+    .. note::
+
+       This function uses the Python ``multiprocessing`` module for parallel execution. This function should be called from within
+       an ``if __name__ == "__main__"`` guard to prevent unintended process spawning.
+
+    Starting from the beginning of the circuit, the noise affecting each entangling layer is inverted and each Pauli anti-noise
+    generator is then propagated forward through the remainder of the circuit and applied to the observable. The propagation
+    routines used to implement this method are available in the `pauli-prop <https://qiskit.github.io/pauli-prop/>`_ package.
+
+    As each anti-noise generator is propagated forward through the circuit under the action of :math:`N` Pauli rotation gates of an
+    $M$-qubit circuit, the number of terms will grow as :math:`O(2^N)` towards a maximum of :math:`4^M` unique Pauli components. To control
+    the computational cost, terms with small coefficients must be truncated, which will result in some error in the evolved
+    anti-noise channel.
+
+    In addition to the truncation of the evolved anti-noise channel, :math:`\Lambda^{-1}`, :math:`\tilde{O}` is also truncated as it is
+    propagated through :math:`\Lambda^{-1}`. This is also a source of bias in the final mitigated expectation value.
+
+    While letting :math:`\tilde{O}` grow larger during propagation will increase its accuracy, measuring it requires taking many more
+    shots on the QPU. Typically this increases the coefficients of the original Pauli terms in :math:`O`, along with creating many new
+    Pauli terms with smaller coefficients. Both the rescaling of the original coefficients and the creation of new terms can
+    increase sampling overhead. In practice, we truncate once more by measuring only the largest terms in :math:`\tilde{O}`.
 
     Args:
-        boxed_circuit: Boxed circuit containing InjectNoise annotations.
-        refs_to_noise_model_map: A dictionary mapping noise injection refs to their corresponding noise models as ``PauliLindbladMap``.
-        observable: The observable which will absorb the antinoise.
-        max_err_terms: The maximum number of terms each noise generator may contain as it evolves through the circuit
-        max_obs_terms: The maximum number of terms the noise-mitigated observable may contain
+        noisy_circuit: A circuit with associated Pauli-Lindblad gate noise.
+
+            If this circuit is boxed, there are expected to be ``InjectNoise`` annotations associated with each box for which gate
+            noise should be mitigated. Additionally, the ``refs_to_noise_model_map`` should provide a mapping from the reference
+            ID of each ``InjectNoise`` annotation to the associated noise model for that layer, specified as a ``PauliLindbladMap``.
+
+            If this circuit is not boxed, the noise model is expected to be embedded as ``PauliLindbladError`` instructions adjacent
+            to each circuit layer for which gate noise should be mitigated. In this case, ``refs_to_noise_model_map`` may be None.
+        observable: The observable which will absorb the anti-noise.
+        refs_to_noise_model_map: A dictionary mapping noise injection referencs IDs to their corresponding noise models as
+            ``PauliLindbladMap``. If ``noisy_circuit`` is not boxed and contains ``PauliLindbladError`` instructions from `qiskit-aer`,
+            this mapping is not needed.
+        max_err_terms: The maximum number of terms each anti-noise generator may contain as it evolves through the circuit
+        max_obs_terms: The maximum number of terms the noise-mitigating observable may contain
         search_step: A parameter that can speed up the approximate application of each error to the observable. The
             relevant subroutine searches a very large 3D space to identify the ``max_obs_terms`` largest terms in a product.
             Setting this step size >1 accelerates that search by a factor of ``search_step**3``, at a potential cost
@@ -77,15 +108,15 @@ def generate_noise_mitigating_observable(
             ``max(1, num_processes // 2)``.
 
     Returns:
-        The noise-mitigated observable
+        The noise-mitigating observable
 
     Raises:
         ValueError: The circuit and observable have mismatching sizes
         ValueError: num_processes and batch_size must be >= 1
         ValueError: ``max_obs_terms`` should be larger than the length of ``observable``
     """
-    if observable.num_qubits != boxed_circuit.num_qubits:
-        raise ValueError(f"{observable.num_qubits = } does not match {boxed_circuit.num_qubits = }")
+    if observable.num_qubits != noisy_circuit.num_qubits:
+        raise ValueError(f"{observable.num_qubits = } does not match {noisy_circuit.num_qubits = }")
     if batch_size < 1:
         raise ValueError("batch_size must be integer greater than or equal to 1.")
     # Default num_processes is all cores minus one
@@ -127,7 +158,7 @@ def generate_noise_mitigating_observable(
 
     # Strip boxes and inject Aer PauliLindbladError instructions
     noisy_circuit = _inject_learned_noise_to_boxed_circuit(
-        boxed_circuit,
+        noisy_circuit,
         refs_to_noise_model_map,
         include_barriers=False,
         remove_final_measurements=True,
@@ -180,7 +211,7 @@ def generate_noise_mitigating_observable(
         while True:
             if print_progress and (time.time() - last_update > 0.1):
                 print(
-                    f"{num_consumed} / {num_generators}",
+                    f"{num_consumed} / {num_generators} generators propagated",
                     end="\r",
                     flush=True,
                 )
@@ -252,6 +283,11 @@ def generate_noise_mitigating_observable(
             # If nothing to do, sleep before checking again
             time.sleep(0.001)
 
+    print(
+        f"Finished! {num_generators} / {num_generators} generators propagated.",
+        end="\r",
+        flush=True,
+    )
     observable *= global_scale_factor
 
     return observable
