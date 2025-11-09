@@ -285,11 +285,8 @@ def generate_noise_mitigating_observable(
             # If nothing to do, sleep before checking again
             time.sleep(0.001)
 
-    print(
-        f"Finished! {num_generators} / {num_generators} generators propagated.",
-        end="\r",
-        flush=True,
-    )
+    msg = f"\rFinished! {num_generators} / {num_generators} generators propagated."
+    print(f"\r{msg:<70}", end="", flush=True)
     observable *= global_scale_factor
 
     return observable
