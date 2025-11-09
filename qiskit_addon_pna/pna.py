@@ -213,8 +213,8 @@ def generate_noise_mitigating_observable(
         while True:
             if print_progress and (time.time() - last_update > 0.1):
                 print(
-                    f"{num_consumed} / {num_generators} generators propagated",
-                    end="\r",
+                    f"\r{num_consumed} / {num_generators} generators propagated",
+                    end="",
                     flush=True,
                 )
                 last_update = time.time()
