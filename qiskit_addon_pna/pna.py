@@ -52,6 +52,7 @@ def generate_noise_mitigating_observable(
     print_progress: bool = False,
     atol: float = 1e-8,
     batch_size: int = 1,
+    inject_noise_before: bool = True,
 ) -> SparsePauliOp:
     r"""Generate a noise-mitigating observable by propagating it through the inverse of a learned noise channel.
 
@@ -106,6 +107,8 @@ def generate_noise_mitigating_observable(
             This coarse-grain application of anti-noise to the observable comes at a loss of accuracy related to the probability
             that more than one error in the batch occurs when the circuit is run. This should usually not be set higher than
             ``max(1, num_processes // 2)``.
+        inject_noise_before: If `True`, the Pauli Lindblad noise instruction will be inserted before its
+         corresponding 2-gate layer. Otherwise, it will be inserted after it, defaults to `True`.
 
     Returns:
         The noise-mitigating observable
@@ -164,6 +167,7 @@ def generate_noise_mitigating_observable(
         refs_to_noise_model_map,
         include_barriers=False,
         remove_final_measurements=True,
+        inject_noise_before=inject_noise_before,
     )
 
     # Evolve any known Clifford gates to the front of the circuit
@@ -421,7 +425,7 @@ def _inject_learned_noise_to_boxed_circuit(
         include_barriers: A boolean to decide whether or not to insert barriers around `LayerError` instructions.
         remove_final_measurements: If `True` remove any boxed final measure instructions from the circuit.
         inject_noise_before: If `True`, the Pauli Lindblad noise instruction will be inserted before its
-         corresponding 2-qubit layer. Otherwise, it will be inserted after it, defaults to `True`.
+         corresponding 2-gate layer. Otherwise, it will be inserted after it, defaults to `True`.
 
     Returns:
         A `QuantumCircuit` without boxes and with `PauliLindbladError` instructions inserted according to the given mapping.
