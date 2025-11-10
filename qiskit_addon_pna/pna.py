@@ -107,8 +107,8 @@ def generate_noise_mitigating_observable(
             This coarse-grain application of anti-noise to the observable comes at a loss of accuracy related to the probability
             that more than one error in the batch occurs when the circuit is run. This should usually not be set higher than
             ``max(1, num_processes // 2)``.
-        inject_noise_before: If `True`, the Pauli Lindblad noise instruction will be inserted before its
-         corresponding 2-gate layer. Otherwise, it will be inserted after it, defaults to `True`.
+        inject_noise_before: If ``True``, the Pauli Lindblad noise instruction will be inserted before its
+         corresponding 2-gate layer. Otherwise, it will be inserted after it, defaults to ``True``.
 
     Returns:
         The noise-mitigating observable
