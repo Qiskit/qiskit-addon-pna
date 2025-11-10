@@ -93,3 +93,4 @@ References
    How-To Guides <how_tos/index>
    API Reference <apidocs/index>
    GitHub <https://github.com/qiskit/qiskit-addon-pna>
+   Release Notes <release-notes>
