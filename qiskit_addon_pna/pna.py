@@ -108,7 +108,7 @@ def generate_noise_mitigating_observable(
             that more than one error in the batch occurs when the circuit is run. This should usually not be set higher than
             ``max(1, num_processes // 2)``.
         inject_noise_before: If ``True``, the Pauli Lindblad noise instruction will be inserted before its
-         corresponding 2-gate layer. Otherwise, it will be inserted after it, defaults to ``True``.
+         corresponding 2q-gate layer. Otherwise, it will be inserted after it, defaults to ``True``.
 
     Returns:
         The noise-mitigating observable
@@ -425,7 +425,7 @@ def _inject_learned_noise_to_boxed_circuit(
         include_barriers: A boolean to decide whether or not to insert barriers around `LayerError` instructions.
         remove_final_measurements: If `True` remove any boxed final measure instructions from the circuit.
         inject_noise_before: If `True`, the Pauli Lindblad noise instruction will be inserted before its
-         corresponding 2-gate layer. Otherwise, it will be inserted after it, defaults to `True`.
+         corresponding 2q-gate layer. Otherwise, it will be inserted after it, defaults to `True`.
 
     Returns:
         A `QuantumCircuit` without boxes and with `PauliLindbladError` instructions inserted according to the given mapping.
