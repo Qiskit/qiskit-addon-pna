@@ -1,3 +1,16 @@
+<!-- SHIELDS -->
+<div align="left">
+
+  [![Release](https://img.shields.io/pypi/v/qiskit-addon-pna)](https://github.com/Qiskit/qiskit-addon-pna/releases)
+  ![Platform](https://img.shields.io/badge/%F0%9F%92%BB%20Platform-Linux%20%7C%20macOS-informational)
+  [![Python](https://img.shields.io/pypi/pyversions/qiskit-addon-pna?label=Python&logo=python)](https://www.python.org/)
+  [![Qiskit](https://img.shields.io/badge/Qiskit%20-%20%3E%3D2.2%20-%20%236133BD?logo=Qiskit)](https://github.com/Qiskit/qiskit)
+  [![Docs (stable)](https://img.shields.io/badge/%F0%9F%93%84%20Docs-stable-blue.svg)](https://qiskit.github.io/qiskit-addon-pna/)
+  [![License](https://img.shields.io/github/license/Qiskit/qiskit-addon-pna?label=License)](LICENSE.txt)
+  [![Downloads](https://img.shields.io/pypi/dm/qiskit-addon-pna.svg?label=Downloads)](https://pypi.org/project/qiskit-addon-pna/)
+  [![Tests](https://github.com/Qiskit/qiskit-addon-pna/actions/workflows/test_latest_versions.yml/badge.svg)](https://github.com/Qiskit/qiskit-addon-pna/actions/workflows/test_latest_versions.yml)
+</div>
+
 # Qiskit addon: Propagated noise absorption (PNA)
 
 PNA is a technique for mitigating errors in observable expectation values by "absorbing" the
