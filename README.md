@@ -17,7 +17,7 @@ PNA is a technique for mitigating errors in observable expectation values by "ab
 inverses of the learned noise channels into the observable using [Pauli propagation](https://qiskit.github.io/pauli-prop/). Each Pauli
 noise generator in the noise model is classically propagated to the end of the circuit and applied
 to the observable, resulting in a new observable that when measured on a QPU, mitigates the
-learned gate noise.
+learned gate noise. Check out the [tutorial](https://qiskit.github.io/qiskit-addon-pna/tutorials/01_generate_noise_mitigating_observable.html) to see how it works!
 
 ### Overview
 Executing entangling gates on modern QPUs results in a substantial amount of noise. Until fully
