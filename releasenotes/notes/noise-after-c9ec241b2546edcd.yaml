@@ -1,0 +1,4 @@
+---
+features:
+  - |
+    Add argument to :func:`qiskit_addon_pna.generate_noise_mitigating_observable` specifying whether noise should be injected before or after entangling layers.
