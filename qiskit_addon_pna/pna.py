@@ -53,6 +53,7 @@ def generate_noise_mitigating_observable(
     atol: float = 1e-8,
     batch_size: int = 1,
     inject_noise_before: bool = True,
+    mp_start_method: str | None = "spawn",
 ) -> SparsePauliOp:
     r"""Generate a noise-mitigating observable by propagating it through the inverse of a learned noise channel.
 
@@ -109,6 +110,8 @@ def generate_noise_mitigating_observable(
             ``max(1, num_processes // 2)``.
         inject_noise_before: If ``True``, the Pauli Lindblad noise instruction will be inserted before its
             corresponding 2q-gate layer. Otherwise, it will be inserted after it, defaults to ``True``.
+        mp_start_method: The method to use when starting new processes in parallel. Valid values are ``fork``, ``spawn``,
+            ``forkserver``, and ``None``. If ``None``, the 
 
     Returns:
         The noise-mitigating observable
@@ -195,7 +198,8 @@ def generate_noise_mitigating_observable(
     global_scale_factor = 1.0
     gen_gen = _generator_generator(noisy_circuit)
 
-    with mp.Pool(
+    ctx = mp.get_context(mp_start_method)
+    with ctx.Pool(
         processes=num_processes,
         initializer=_initialize_pool,
         initargs=(

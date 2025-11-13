@@ -1,0 +1,4 @@
+---
+features:
+  - |
+    Added an ``mp_start_method`` kwarg to :func:`qiskit_addon_pna.generate_noise_mitigating_observable` to specify the method to use to start new parallel processes.
