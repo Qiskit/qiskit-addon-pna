@@ -87,7 +87,7 @@ def generate_noise_mitigating_observable(
 
             If this circuit is not boxed, the noise model is expected to be embedded as ``PauliLindbladError`` instructions adjacent
             to each circuit layer for which gate noise should be mitigated. In this case, ``refs_to_noise_model_map`` may be None.
-        observable: The observable which will absorb the anti-noise. T
+        observable: The observable which will absorb the anti-noise.
         refs_to_noise_model_map: A dictionary mapping noise injection referencs IDs to their corresponding noise models as
             ``PauliLindbladMap``. If ``noisy_circuit`` is not boxed and contains ``PauliLindbladError`` instructions from `qiskit-aer`,
             this mapping is not needed.
