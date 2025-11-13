@@ -111,7 +111,7 @@ def generate_noise_mitigating_observable(
         inject_noise_before: If ``True``, the Pauli Lindblad noise instruction will be inserted before its
             corresponding 2q-gate layer. Otherwise, it will be inserted after it, defaults to ``True``.
         mp_start_method: The method to use when starting new parallel processes. Valid values are ``fork``, ``spawn``,
-            ``forkserver``, and ``None``. If ``None``, the
+            ``forkserver``, and ``None``. If ``None``, the default method will be used.
 
     Returns:
         The noise-mitigating observable
