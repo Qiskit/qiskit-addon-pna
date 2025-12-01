@@ -53,7 +53,7 @@ style = [
 ]
 lint = [
     "qiskit-addon-pna[style]",
-    "mypy==1.18.2",
+    "mypy==1.19.0",
     "pylint==4.0.2",
     "reno>=4.1",
     "toml>=0.9.6",
