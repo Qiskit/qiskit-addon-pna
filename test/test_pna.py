@@ -80,6 +80,8 @@ class TestPNA(unittest.TestCase):
         )
         circuit_noisy.save_density_matrix()
         rho_noisy = backend.run(circuit_noisy).result().data()["density_matrix"]
+        noisy_ev = rho_noisy.expectation_value(observable)
         mitigated_ev = rho_noisy.expectation_value(otilde)
 
+        assert not np.isclose(exact_ev, noisy_ev)
         assert np.isclose(exact_ev, mitigated_ev)
