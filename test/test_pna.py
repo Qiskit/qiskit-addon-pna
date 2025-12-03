@@ -82,8 +82,9 @@ class TestPNA(unittest.TestCase):
             search_step=4**num_qubits,
             atol=0.0,
         )
-        circuit_noisy.save_density_matrix()
-        rho_noisy = backend.run(circuit_noisy).result().data()["density_matrix"]
+        circuit_noisy_cp = circuit_noisy.copy()
+        circuit_noisy_cp.save_density_matrix()
+        rho_noisy = backend.run(circuit_noisy_cp).result().data()["density_matrix"]
         noisy_ev = rho_noisy.expectation_value(observable)
         mitigated_ev = rho_noisy.expectation_value(otilde)
 
@@ -125,3 +126,33 @@ class TestPNA(unittest.TestCase):
         )
         mitigated_ev = rho_noisy.expectation_value(otilde)
         assert np.isclose(exact_ev, mitigated_ev)
+        
+        otilde = generate_noise_mitigating_observable(
+            circuit_noisy,
+            observable,
+            max_err_terms=4**num_qubits,
+            max_obs_terms=(4**num_qubits) ** 3,
+            search_step=4**num_qubits,
+            atol=0.0,
+            batch_size=4,
+        )
+        mitigated_ev = rho_noisy.expectation_value(otilde)
+
+        assert np.isclose(exact_ev, mitigated_ev, atol=1e-3)
+
+    def test_pna_inputs(self):
+        qc = QuantumCircuit(2)
+        spo = SparsePauliOp("Z")
+        with self.assertRaises(ValueError):
+            generate_noise_mitigating_observable(qc, spo, max_err_terms=1, max_obs_terms=1)
+        qc = QuantumCircuit(1)
+        with self.assertRaises(ValueError):
+            generate_noise_mitigating_observable(qc, spo, max_err_terms=1, max_obs_terms=1, batch_size=0)
+        with self.assertRaises(ValueError):
+            generate_noise_mitigating_observable(qc, spo, max_err_terms=1, max_obs_terms=1, num_processes=0)
+        spo = SparsePauliOp(["Z", "X"])
+        with self.assertRaises(ValueError):
+            generate_noise_mitigating_observable(qc, spo, max_err_terms=1, max_obs_terms=1)
+        spo = SparsePauliOp("Z", 1.0+1.0j)
+        with self.assertRaises(ValueError):
+            generate_noise_mitigating_observable(qc, spo, max_err_terms=1, max_obs_terms=1)

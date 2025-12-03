@@ -219,7 +219,7 @@ def generate_noise_mitigating_observable(
         ),
     ) as pool:
         while True:
-            if print_progress and (time.time() - last_update > 0.1):
+            if print_progress and (time.time() - last_update > 0.1): # pragma: no cover
                 print(
                     f"\r{num_consumed} / {num_generators} generators propagated",
                     end="",
@@ -293,7 +293,7 @@ def generate_noise_mitigating_observable(
             # If nothing to do, sleep before checking again
             time.sleep(0.001)
 
-    if print_progress:
+    if print_progress: # pragma: no cover
         msg = f"\rFinished! {num_generators} / {num_generators} generators propagated."
         print(f"\r{msg:<70}", end="", flush=True)
     observable *= global_scale_factor
@@ -344,10 +344,6 @@ def _generator_generator(noisy_circuit):
     for circ_inst in noisy_circuit:
         if circ_inst.name == "quantum_channel":
             err = circ_inst.operation._quantum_error
-            if not isinstance(err, PauliLindbladError):
-                raise TypeError(
-                    f"Expected PauliLindbladError in noisy_circuit but found {type(err)}"
-                )
             err = err.inverse()
             for generator, quasiprob in zip(
                 err.generators, (1 - np.exp(-2 * err.rates)) / 2, strict=True
