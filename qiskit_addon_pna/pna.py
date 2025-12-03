@@ -219,7 +219,7 @@ def generate_noise_mitigating_observable(
         ),
     ) as pool:
         while True:
-            if print_progress and (time.time() - last_update > 0.1): # pragma: no cover
+            if print_progress and (time.time() - last_update > 0.1):  # pragma: no cover
                 print(
                     f"\r{num_consumed} / {num_generators} generators propagated",
                     end="",
@@ -293,7 +293,7 @@ def generate_noise_mitigating_observable(
             # If nothing to do, sleep before checking again
             time.sleep(0.001)
 
-    if print_progress: # pragma: no cover
+    if print_progress:  # pragma: no cover
         msg = f"\rFinished! {num_generators} / {num_generators} generators propagated."
         print(f"\r{msg:<70}", end="", flush=True)
     observable *= global_scale_factor

@@ -126,7 +126,7 @@ class TestPNA(unittest.TestCase):
         )
         mitigated_ev = rho_noisy.expectation_value(otilde)
         assert np.isclose(exact_ev, mitigated_ev)
-        
+
         otilde = generate_noise_mitigating_observable(
             circuit_noisy,
             observable,
@@ -147,12 +147,16 @@ class TestPNA(unittest.TestCase):
             generate_noise_mitigating_observable(qc, spo, max_err_terms=1, max_obs_terms=1)
         qc = QuantumCircuit(1)
         with self.assertRaises(ValueError):
-            generate_noise_mitigating_observable(qc, spo, max_err_terms=1, max_obs_terms=1, batch_size=0)
+            generate_noise_mitigating_observable(
+                qc, spo, max_err_terms=1, max_obs_terms=1, batch_size=0
+            )
         with self.assertRaises(ValueError):
-            generate_noise_mitigating_observable(qc, spo, max_err_terms=1, max_obs_terms=1, num_processes=0)
+            generate_noise_mitigating_observable(
+                qc, spo, max_err_terms=1, max_obs_terms=1, num_processes=0
+            )
         spo = SparsePauliOp(["Z", "X"])
         with self.assertRaises(ValueError):
             generate_noise_mitigating_observable(qc, spo, max_err_terms=1, max_obs_terms=1)
-        spo = SparsePauliOp("Z", 1.0+1.0j)
+        spo = SparsePauliOp("Z", 1.0 + 1.0j)
         with self.assertRaises(ValueError):
             generate_noise_mitigating_observable(qc, spo, max_err_terms=1, max_obs_terms=1)
