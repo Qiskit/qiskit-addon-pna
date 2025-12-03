@@ -123,7 +123,5 @@ class TestPNA(unittest.TestCase):
             num_processes=8,
             atol=0.0,
         )
-
         mitigated_ev = rho_noisy.expectation_value(otilde)
-
         assert np.isclose(exact_ev, mitigated_ev)
