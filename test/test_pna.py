@@ -178,9 +178,13 @@ class TestPNA(unittest.TestCase):
         actual = _keep_k_largest(SparsePauliOp(["X", "Y", "Z"], [1.0, 1.0, 0.5]), 2)
         assert np.all(actual[0].to_matrix() == expected[0].to_matrix())
         assert actual[1] == expected[1]
-        expected = (SparsePauliOp(["X", "Y"], [1.5, 1.5]), 0.5)
-        actual = _keep_k_largest(
-            SparsePauliOp(["X", "Y", "Z"], [1.0, 1.0, 0.5]), k=2, normalize=True
+
+        spo = SparsePauliOp(["X", "Y", "Z"], [1.0, 1.0, 0.5])
+        scaling_factor = np.linalg.norm(spo.coeffs) / np.sqrt(2)
+        expected = (
+            SparsePauliOp(["X", "Y"], [scaling_factor, scaling_factor]),
+            sum(spo.coeffs) - scaling_factor * 2,
         )
+        actual = _keep_k_largest(spo, k=2, normalize=True)
         assert np.all(actual[0].to_matrix() == expected[0].to_matrix())
         assert actual[1] == expected[1]
