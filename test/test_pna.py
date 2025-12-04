@@ -18,6 +18,7 @@ import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import PauliLindbladMap, SparsePauliOp
 from qiskit_addon_pna import generate_noise_mitigating_observable
+from qiskit_addon_pna.pna import _keep_k_largest
 from qiskit_aer import AerSimulator
 from qiskit_aer.noise.errors import PauliLindbladError
 from samplomatic.annotations import InjectNoise
@@ -66,6 +67,7 @@ class TestPNA(unittest.TestCase):
                     cargs=circuit_noisy.clbits[edge[0] : edge[1] + 1],
                 )
                 circuit_noisy.ry(-np.pi / 2, edge[1])
+                circuit_noisy.barrier()
 
         backend = AerSimulator(method="density_matrix")
 
@@ -82,8 +84,9 @@ class TestPNA(unittest.TestCase):
             search_step=4**num_qubits,
             atol=0.0,
         )
-        circuit_noisy.save_density_matrix()
-        rho_noisy = backend.run(circuit_noisy).result().data()["density_matrix"]
+        circuit_noisy_cp = circuit_noisy.copy()
+        circuit_noisy_cp.save_density_matrix()
+        rho_noisy = backend.run(circuit_noisy_cp).result().data()["density_matrix"]
         noisy_ev = rho_noisy.expectation_value(observable)
         mitigated_ev = rho_noisy.expectation_value(otilde)
 
@@ -125,3 +128,63 @@ class TestPNA(unittest.TestCase):
         )
         mitigated_ev = rho_noisy.expectation_value(otilde)
         assert np.isclose(exact_ev, mitigated_ev)
+
+        otilde = generate_noise_mitigating_observable(
+            circuit_noisy,
+            observable,
+            max_err_terms=4**num_qubits,
+            max_obs_terms=(4**num_qubits) ** 3,
+            search_step=4**num_qubits,
+            atol=0.0,
+            batch_size=4,
+        )
+        mitigated_ev = rho_noisy.expectation_value(otilde)
+
+        assert np.isclose(exact_ev, mitigated_ev, atol=1e-3)
+
+    def test_pna_inputs(self):
+        qc = QuantumCircuit(2)
+        spo = SparsePauliOp("Z")
+        with self.assertRaises(ValueError):
+            generate_noise_mitigating_observable(qc, spo, max_err_terms=1, max_obs_terms=1)
+        qc = QuantumCircuit(1)
+        with self.assertRaises(ValueError):
+            generate_noise_mitigating_observable(
+                qc, spo, max_err_terms=1, max_obs_terms=1, batch_size=0
+            )
+        with self.assertRaises(ValueError):
+            generate_noise_mitigating_observable(
+                qc, spo, max_err_terms=1, max_obs_terms=1, num_processes=0
+            )
+        spo = SparsePauliOp(["Z", "X"])
+        with self.assertRaises(ValueError):
+            generate_noise_mitigating_observable(qc, spo, max_err_terms=1, max_obs_terms=1)
+        spo = SparsePauliOp("Z", 1.0 + 1.0j)
+        with self.assertRaises(ValueError):
+            generate_noise_mitigating_observable(qc, spo, max_err_terms=1, max_obs_terms=1)
+        with qc.box([InjectNoise("r0")]):
+            qc.x(0)
+        spo = SparsePauliOp("Z")
+        with self.assertRaises(ValueError):
+            generate_noise_mitigating_observable(qc, spo, max_err_terms=1, max_obs_terms=1)
+        with self.assertRaises(ValueError):
+            generate_noise_mitigating_observable(qc, spo, {}, max_err_terms=1, max_obs_terms=1)
+
+    def test_keep_k_largest(self):
+        expected = (SparsePauliOp("I", 0 + 0j), 1.0)
+        actual = _keep_k_largest(SparsePauliOp("X"), 0)
+        assert actual == expected
+        expected = (SparsePauliOp(["X", "Y"]), 0.5)
+        actual = _keep_k_largest(SparsePauliOp(["X", "Y", "Z"], [1.0, 1.0, 0.5]), 2)
+        assert np.all(actual[0].to_matrix() == expected[0].to_matrix())
+        assert actual[1] == expected[1]
+
+        spo = SparsePauliOp(["X", "Y", "Z"], [1.0, 1.0, 0.5])
+        scaling_factor = np.linalg.norm(spo.coeffs) / np.sqrt(2)
+        expected = (
+            SparsePauliOp(["X", "Y"], [scaling_factor, scaling_factor]),
+            sum(spo.coeffs) - scaling_factor * 2,
+        )
+        actual = _keep_k_largest(spo, k=2, normalize=True)
+        assert np.all(actual[0].to_matrix() == expected[0].to_matrix())
+        assert actual[1] == expected[1]
