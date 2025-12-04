@@ -9,6 +9,7 @@
   [![License](https://img.shields.io/github/license/Qiskit/qiskit-addon-pna?label=License)](LICENSE.txt)
   [![Downloads](https://img.shields.io/pypi/dm/qiskit-addon-pna.svg?label=Downloads)](https://pypi.org/project/qiskit-addon-pna/)
   [![Tests](https://github.com/Qiskit/qiskit-addon-pna/actions/workflows/test_latest_versions.yml/badge.svg)](https://github.com/Qiskit/qiskit-addon-pna/actions/workflows/test_latest_versions.yml)
+  [![Coverage](https://coveralls.io/repos/github/Qiskit/qiskit-addon-pna/badge.svg?branch=main)](https://coveralls.io/github/Qiskit/qiskit-addon-pna?branch=main)
 </div>
 
 # Qiskit addon: Propagated noise absorption (PNA)

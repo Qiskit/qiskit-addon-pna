@@ -313,7 +313,7 @@ def _initialize_pool(
     _max_obs_terms,
     _atol,
     _num_qubits,
-):
+):  # pragma: no cover
     # Dynamic (multiprocessing objects that parent process will update):
     global \
         z_shared_np, \
@@ -350,7 +350,7 @@ def _generator_generator(noisy_circuit):
             ):
                 yield generator, quasiprob, generator_idx, gate_idx
                 generator_idx += 1
-        elif circ_inst.name != "barrier":
+        elif circ_inst.name != "barrier":  # pragma: no cover
             gate_idx += 1
 
 
@@ -364,7 +364,7 @@ def _evolve_and_apply_generator(
     search_step: int,
     atol: float,
     original_obs_length: int,
-) -> SparsePauliOp:
+) -> SparsePauliOp:  # pragma: no cover
     """Forward-propagate a generator through a circuit and normalize after truncation if requested."""
     if quasiprob == 0:
         num_qb_in_obs = z_shared_np.shape[1]
