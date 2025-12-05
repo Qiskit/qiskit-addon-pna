@@ -40,12 +40,6 @@ jobs:
           cd qiskit
           git rev-parse HEAD
           python -m build --wheel
-      - name: Build Qiskit Aer development wheel
-        run: |
-          git clone https://github.com/Qiskit/qiskit-aer
-          cd qiskit-aer
-          git rev-parse HEAD
-          python -m build --wheel
       - name: Build Pauli prop development wheel
         run: |
           git clone https://github.com/Qiskit/pauli-prop
@@ -63,7 +57,6 @@ jobs:
         run: >-
           extremal-python-dependencies pin-dependencies --inplace
           "qiskit @ file:$(echo qiskit/dist/*.whl)"
-          "qiskit-aer @ file:$(echo qiskit-aer/dist/*.whl)"
           "pauli-prop @ file:$(echo pauli-prop/dist/*.whl)"
           "samplomatic @ file:$(echo samplomatic/dist/*.whl)"
       - name: Test using tox environment
