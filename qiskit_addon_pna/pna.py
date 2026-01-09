@@ -173,6 +173,12 @@ def generate_noise_mitigating_observable(
         inject_noise_before=inject_noise_before,
     )
 
+    if not any(
+        inst.operation.name == "quantum_channel" and hasattr(inst.operation, "_quantum_error")
+        for inst in noisy_circuit.data
+    ):
+        return observable.copy()
+
     # Evolve any known Clifford gates to the front of the circuit
     _, noisy_circuit = evolve_through_cliffords(noisy_circuit)
 
