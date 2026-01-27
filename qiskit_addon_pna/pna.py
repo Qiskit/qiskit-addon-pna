@@ -133,6 +133,18 @@ def generate_noise_mitigating_observable(
     if max_obs_terms < len(observable):
         raise ValueError("max_obs_terms must be larger than the length of observable.")
 
+    if refs_to_noise_model_map:
+        for inst in noisy_circuit.data:
+            if inst.name == "box":
+                anno = get_annotation(inst.operation, InjectNoise)
+                if anno is None:
+                    continue
+                else:
+                    if refs_to_noise_model_map[anno.ref].num_qubits != inst.operation.num_qubits:
+                        raise ValueError(
+                            f"Noise model (ref: {anno.ref}) has a different number of qubits ({refs_to_noise_model_map[anno.ref].num_qubits}) than the associated noisy box ({inst.operation.num_qubits})"
+                        )
+
     observable = SparsePauliOp(observable)
     original_obs_length = len(observable)
 
