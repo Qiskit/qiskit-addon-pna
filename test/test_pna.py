@@ -37,11 +37,11 @@ class TestPNA(unittest.TestCase):
 
         noise_models = [
             SparsePauliOp(
-                ["XI", "IX", "YI", "IY", "ZI", "IZ", "XX", "YY", "ZZ"],
+                ["IXI", "IIX", "IYI", "IIY", "IZI", "IIZ", "IXX", "IYY", "IZZ"],
                 rng.uniform(1e-5, 1e-2, size=9),
             ),
             SparsePauliOp(
-                ["IX", "XI", "IY", "YI", "IZ", "ZI", "XX", "YY", "ZZ"],
+                ["IXI", "XII", "IYI", "YII", "IZI", "ZII", "XXI", "YYI", "ZZI"],
                 rng.uniform(1e-5, 1e-2, size=9),
             ),
         ]
@@ -63,8 +63,8 @@ class TestPNA(unittest.TestCase):
                 circuit_noisy.cx(edge[0], edge[1])
                 circuit_noisy.append(
                     PauliLindbladError(noise_models[i].paulis, noise_models[i].coeffs.real),
-                    qargs=circuit_noisy.qubits[edge[0] : edge[1] + 1],
-                    cargs=circuit_noisy.clbits[edge[0] : edge[1] + 1],
+                    qargs=circuit_noisy.qubits,
+                    cargs=circuit_noisy.clbits,
                 )
                 circuit_noisy.ry(-np.pi / 2, edge[1])
                 circuit_noisy.barrier()
