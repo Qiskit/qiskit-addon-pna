@@ -383,7 +383,7 @@ def _evolve_and_apply_generator(
     atol: float,
     original_obs_length: int,
 ) -> SparsePauliOp:  # pragma: no cover
-    """Forward-propagate a generator through a circuit and normalize after truncation if requested."""
+    """Forward-propagate a generator through a circuit."""
     if quasiprob == 0:
         num_qb_in_obs = z_shared_np.shape[1]
         return SparsePauliOp("I" * num_qb_in_obs, [0])
@@ -396,10 +396,6 @@ def _evolve_and_apply_generator(
     evolved, _ = propagate_through_rotation_gates(
         generator, rot_gates, max_terms=max_error_terms, atol=atol, frame="s"
     )
-
-    norm_reduction = float(np.linalg.norm(evolved.coeffs) / np.linalg.norm(generator.coeffs))
-    if norm_reduction > 1 + max(atol, float(np.finfo(np.float64).resolution)):
-        norm_reduction = 1.0
 
     while True:
         if generator_idx < obs_ready_for_generator_idx.value:
