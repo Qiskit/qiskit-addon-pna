@@ -17,12 +17,14 @@ Activate your new environment.
     source /path/to/virtual/environment/bin/activate
 
 
-.. _Option 1:
+
 
 There are two primary ways to install the packages:
 
 - :ref:`Option 1`
 - :ref:`Option 2`
+
+.. _Option 1:
 
 Option 1: Install from PyPI
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
