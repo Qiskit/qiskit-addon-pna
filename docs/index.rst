@@ -2,7 +2,7 @@
 Qiskit add-on: Propagated noise absorption (PNA)
 ################################################
 
-PNA is a technique for mitigating errors in observable expectation values by "absorbing" the inverses of the learned noise channels into the observable using `Pauli propagation <https://qiskit.github.io/pauli-prop/>`_. Each Pauli noise generator in the noise model is classically propagated to the end of the circuit and applied to the observable, resulting in a new observable that when measured on a QPU, mitigates the learned gate noise. Check out the `tutorial <https://github.com/qiskit-community/qdc-challenges-2025/blob/main/day3_tutorials/Track_A/pna/propagated_noise_absorption.ipynb>`_ to see how it works! 
+Propagated noise absorption (PNA) [1]_ is a technique for mitigating errors in observable expectation values by "absorbing" the inverses of the learned noise channels into the observable using `Pauli propagation <https://qiskit.github.io/pauli-prop/>`_. Each Pauli noise generator in the noise model is classically propagated to the end of the circuit and applied to the observable, resulting in a new observable that when measured on a QPU, mitigates the learned gate noise. Check out the `tutorial <https://github.com/qiskit-community/qdc-challenges-2025/blob/main/day3_tutorials/Track_A/pna/propagated_noise_absorption.ipynb>`_ to see how it works! 
 
 Overview
 --------
@@ -80,11 +80,11 @@ License
 References
 ----------
 
-[1] Andrew Eddins, et al., `Computing noise-canceling observables via Pauli propagation <https://arxiv.org/abs/2606.20441>`_, arXiv:2606.20441 [quant-ph].
+.. [1] Andrew Eddins, et al., `Computing noise-canceling observables via Pauli propagation <https://arxiv.org/abs/2606.20441>`_, arXiv:2606.20441 [quant-ph].
 
-[2] Ewout van den Berg, et al., `Probabilistic error cancellation with sparse Pauli-Lindblad models on noisy quantum processors <https://arxiv.org/abs/2201.09866>`_, arXiv:2201.09866 [quant-ph].
+.. [2] Ewout van den Berg, et al., `Probabilistic error cancellation with sparse Pauli-Lindblad models on noisy quantum processors <https://arxiv.org/abs/2201.09866>`_, arXiv:2201.09866 [quant-ph].
 
-[3] Sergei Filippov, et al., `Scalable tensor-network error mitigation for near-term quantum computing <https://arxiv.org/abs/2307.11740>`_, arXiv:2307.11740 [quant-ph].
+.. [3] Sergei Filippov, et al., `Scalable tensor-network error mitigation for near-term quantum computing <https://arxiv.org/abs/2307.11740>`_, arXiv:2307.11740 [quant-ph].
 
 .. toctree::
   :hidden:
