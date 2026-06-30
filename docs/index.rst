@@ -1,8 +1,8 @@
-################################################
-Qiskit add-on: Propagated noise absorption (PNA)
-################################################
+#################################
+Propagated noise absorption (PNA)
+#################################
 
-Propagated noise absorption (PNA) [1]_ is a technique for mitigating errors in observable expectation values by "absorbing" the inverses of the learned noise channels into the observable using `Pauli propagation <https://qiskit.github.io/pauli-prop/>`_. Each Pauli noise generator in the noise model is classically propagated to the end of the circuit and applied to the observable, resulting in a new observable that when measured on a QPU, mitigates the learned gate noise. Check out the `tutorial <https://github.com/qiskit-community/qdc-challenges-2025/blob/main/day3_tutorials/Track_A/pna/propagated_noise_absorption.ipynb>`_ to see how it works! 
+Propagated noise absorption (PNA) [1]_ is a technique for mitigating errors in observable expectation values by "absorbing" the inverses of the learned noise channels into the observable using `Pauli propagation <https://qiskit.github.io/pauli-prop/>`_. Each Pauli noise generator in the noise model is classically propagated to the end of the circuit and applied to the observable, resulting in a new observable that when measured on a QPU, mitigates the learned gate noise. Check out the `tutorial <https://github.com/qiskit-community/qdc-challenges-2025/blob/main/day3_tutorials/Track_A/pna/propagated_noise_absorption.ipynb>`_ to see how it works.
 
 Overview
 --------
@@ -28,18 +28,6 @@ Sources of bias
 
 - While letting :math:`\tilde{O}` grow larger during propagation will increase its accuracy, measuring it requires taking many more shots on the QPU. Typically this increases the coefficients of the original Pauli terms in :math:`O`, along with creating many new Pauli terms with smaller coefficients. Both the rescaling of the original coefficients and the creation of new terms can increase sampling overhead. In practice, we truncate once more by measuring only the largest terms in :math:`\tilde{O}`.
 
-Installation
-------------
-
-We encourage installing this package via ``pip``, when possible:
-
-.. code-block:: bash
-
-   pip install 'qiskit-addon-pna'
-
-
-For more installation information refer to the `installation instructions <install.rst>`_ in the documentation.
-
 Citing this project
 -------------------
 
@@ -48,7 +36,7 @@ If you use this package in your research, please cite it according to ``CITATON.
 .. literalinclude:: ../CITATION.bib
    :language: bibtex
 
-Deprecation Policy
+Deprecation policy
 ------------------
 
 We follow `semantic versioning <https://semver.org/>`_ and are guided by the principles in
