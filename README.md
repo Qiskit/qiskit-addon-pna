@@ -12,15 +12,50 @@
   [![Coverage](https://coveralls.io/repos/github/Qiskit/qiskit-addon-pna/badge.svg?branch=main)](https://coveralls.io/github/Qiskit/qiskit-addon-pna?branch=main)
 </div>
 
-# Qiskit addon: Propagated noise absorption (PNA)
+# Propagated noise absorption (PNA)
 
-Propagated noise absorption (PNA) [[1]](#references) is a technique for mitigating errors in observable expectation values by "absorbing" the
-inverses of the learned noise channels into the observable using [Pauli propagation](https://qiskit.github.io/pauli-prop/). Each Pauli
-noise generator in the noise model is classically propagated to the end of the circuit and applied
-to the observable, resulting in a new observable that when measured on a QPU, mitigates the
-learned gate noise. Check out the [tutorial](https://github.com/qiskit-community/qdc-challenges-2025/blob/main/day3_tutorials/Track_A/pna/propagated_noise_absorption.ipynb) to see how it works!
+This package implements propagated noise absorption (PNA) [[1]](#references) for mitigating errors in the expectation value of observables. 
 
-### Overview
+PNA works by "absorbing" the inverses of the learned noise channels into a target observable using Pauli propagation. That is, each Pauli noise generator in the noise model is classically propagated to the end of the circuit and applied to the observable. This results in a new observable that, when measured on a QPU, mitigates the learned gate noise.
+
+This package is suitable for estimating expectation values of general quantum circuits and Pauli observables; however, the technique is generally most effective on circuits that are near-Clifford.
+
+----------------------------------------------------------------------------------------------------
+
+### Documentation
+
+All documentation is available at https://quantum.cloud.ibm.com/docs/addons/qiskit-addon-pna.
+
+----------------------------------------------------------------------------------------------------
+
+### Installation
+
+We encourage installing this package via `pip`, when possible:
+
+```bash
+pip install 'qiskit-addon-pna'
+```
+
+For more installation information refer to these [installation instructions](docs/install.rst).
+
+----------------------------------------------------------------------------------------------------
+
+### Getting started
+
+A simple guide to help you get started quickly with this package is available [here][docs/guides/quickstart.ipynb).
+
+----------------------------------------------------------------------------------------------------
+
+### Use case examples
+
+This technique has been used to mitigate noise on 56-qubit Trotterized Ising models [[1]](#references). 
+
+----------------------------------------------------------------------------------------------------
+
+### Technical discussion
+
+#### Method overview
+
 Executing entangling gates on modern QPUs results in a substantial amount of noise. Until fully
 fault tolerant devices are available, ideal entangling gates, $\mathcal{U}$, will not be available.
 They will instead be affected by some noise channel, $\Lambda$.
@@ -43,7 +78,7 @@ mitigates the learned noise.
 
 ![PNA picture](docs/images/pna_overview.png)
 
-##### Sources of bias
+#### Sources of bias
 
 1. This implementation propagates each Pauli error generator within each anti-noise channel, $\Lambda^{-1}_i$,
 to the end of the circuit. As each anti-noise generator is propagated forward through the circuit
@@ -61,36 +96,9 @@ requires taking many more shots on the QPU. Typically this increases the coeffic
 Pauli terms in $O$, along with creating many new Pauli terms with smaller coefficients. Both the
 rescaling of the original coefficients and the creation of new terms can increase sampling overhead.
 In practice, we truncate once more by measuring only the largest terms in $\tilde{O}$
-
-----------------------------------------------------------------------------------------------------
-
 ### Documentation
 
 All documentation is available at https://qiskit.github.io/qiskit-addon-pna/.
-
-----------------------------------------------------------------------------------------------------
-
-### Installation
-
-We encourage installing this package via `pip`, when possible:
-
-```bash
-pip install 'qiskit-addon-pna'
-```
-
-For more installation information refer to these [installation instructions](docs/install.rst).
-
-----------------------------------------------------------------------------------------------------
-
-### Deprecation Policy
-
-We follow [semantic versioning](https://semver.org/) and are guided by the principles in
-[Qiskit's deprecation policy](https://github.com/Qiskit/qiskit/blob/main/DEPRECATION.md).
-We may occasionally make breaking changes in order to improve the user experience.
-When possible, we will keep old interfaces and mark them as deprecated, as long as they can co-exist with the
-new ones.
-Each substantial improvement, breaking change, or deprecation will be documented in the
-[release notes](https://qiskit.github.io/qiskit-addon-pna/release-notes.html).
 
 ----------------------------------------------------------------------------------------------------
 
@@ -104,9 +112,24 @@ By participating, you are expected to uphold Qiskit's [code of conduct](https://
 
 ----------------------------------------------------------------------------------------------------
 
+### Citing this package
+
+If you use this package in your research, use the [CITATION.bib](CITATION.bib) file in this project’s repository to cite the appropriate reference(s).
+
+----------------------------------------------------------------------------------------------------
+
 ### License
 
 [Apache License 2.0](LICENSE.txt)
+
+----------------------------------------------------------------------------------------------------
+
+### Deprecation Policy
+
+We follow [semantic versioning](https://semver.org/). We may occasionally make breaking changes in
+order to improve the user experience. When possible, we will keep old interfaces and mark them as
+deprecated, as long as they can co-exist with the new ones. Each substantial improvement, breaking
+change, or deprecation will be documented in the [release notes](https://quantum.cloud.ibm.com/docs/api/qiskit-addon-pna/release-notes).
 
 ----------------------------------------------------------------------------------------------------
 
