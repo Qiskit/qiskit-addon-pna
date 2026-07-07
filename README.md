@@ -96,9 +96,6 @@ requires taking many more shots on the QPU. Typically this increases the coeffic
 Pauli terms in $O$, along with creating many new Pauli terms with smaller coefficients. Both the
 rescaling of the original coefficients and the creation of new terms can increase sampling overhead.
 In practice, we truncate once more by measuring only the largest terms in $\tilde{O}$
-### Documentation
-
-All documentation is available at https://qiskit.github.io/qiskit-addon-pna/.
 
 ----------------------------------------------------------------------------------------------------
 
