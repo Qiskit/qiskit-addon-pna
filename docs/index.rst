@@ -72,7 +72,7 @@ Deprecation Policy
 We follow `semantic versioning <https://semver.org/>`_. We may occasionally make breaking changes in order to
 improve the user experience. When possible, we will keep old interfaces and mark them as deprecated, as long
 as they can co-exist with the new ones. Each substantial improvement, breaking change, or deprecation will be
-documented in the `release notes <https://quantum.cloud.ibm.com/docs/api/qiskit-addon-sqd/release-notes>`_.
+documented in the `release notes <https://quantum.cloud.ibm.com/docs/api/qiskit-addon-pna/release-notes>`_.
 
 .. _references:
 
