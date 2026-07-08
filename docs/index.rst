@@ -2,16 +2,33 @@
 Propagated noise absorption (PNA)
 #################################
 
-Propagated noise absorption (PNA) [1]_ is a technique for mitigating errors in observable expectation values by "absorbing" the inverses of the learned noise channels into the observable using `Pauli propagation <https://qiskit.github.io/pauli-prop/>`_. Each Pauli noise generator in the noise model is classically propagated to the end of the circuit and applied to the observable, resulting in a new observable that when measured on a QPU, mitigates the learned gate noise. Check out the `tutorial <https://github.com/qiskit-community/qdc-challenges-2025/blob/main/day3_tutorials/Track_A/pna/propagated_noise_absorption.ipynb>`_ to see how it works.
+This package implements propagated noise absorption (PNA) `[1] <ref1_>`_ for mitigating errors in the expectation value of observables. 
 
-Overview
---------
+PNA works by "absorbing" the inverses of the learned noise channels into a target observable using Pauli propagation. That is, each Pauli noise generator in the noise model is classically propagated to the end of the circuit and applied to the observable. This results in a new observable that, when measured on a QPU, mitigates the learned gate noise.
+
+This package is suitable for estimating expectation values of general quantum circuits and Pauli observables; however, the technique is generally most effective on circuits that are near-Clifford.
+
+Getting started
+---------------
+
+A simple guide to help you get started quickly with this package is available in the :doc:`quickstart guide <guides/quickstart>`.
+
+Use case examples
+-----------------
+
+This technique has been used to mitigate noise on 56-qubit Trotterized Ising models `[1] <ref1_>`_.
+
+Technical discussion
+--------------------
+
+Method overview
+"""""""""""""""
 
 Executing entangling gates on modern QPUs results in a substantial amount of noise. Until fully fault tolerant devices are available, ideal entangling gates, :math:`U`, will not be available. They will instead be affected by some noise channel, :math:`\Lambda`.
 
 .. image:: images/noisy_expt.png
 
-It is possible to learn and efficiently characterize this gate noise as a Pauli-Lindblad model, and as shown in probabilistic error cancellation (PEC), we can mitigate the error by implementing the anti-noise, :math:`\Lambda^{-1}`, with a QPU sampling protocol [2]_. Other techniques, such as tensor-network error mitigation (TEM), implement the inverse noise channel as a classical post-processing step [3]_.
+It is possible to learn and efficiently characterize this gate noise as a Pauli-Lindblad model, and as shown in probabilistic error cancellation (PEC), we can mitigate the error by implementing the anti-noise, :math:`\Lambda^{-1}`, with a QPU sampling protocol `[2] <ref2_>`_. Other techniques, such as tensor-network error mitigation (TEM), implement the inverse noise channel as a classical post-processing step `[3] <ref3_>`_.
 
 .. image:: images/noise_mitigated_expt.png
 
@@ -20,32 +37,13 @@ Like TEM, PNA implements the inverse noise channel in a classical processing ste
 .. image:: images/pna_overview.png
 
 Sources of bias
-^^^^^^^^^^^^^^^
+"""""""""""""""
 
 - This implementation propagates each Pauli error generator within each anti-noise channel, :math:`\Lambda^{-1}_i`, to the end of the circuit. As each anti-noise generator is propagated forward through the circuit under the action of :math:`N` Pauli rotation gates of an :math:`M`-qubit circuit, the number of terms will grow as :math:`O(2^N)` towards a maximum of :math:`4^M` unique Pauli components. To control the computational cost, terms with small coefficients must be truncated, which results in some error in the evolved anti-noise channel.
 
 - In addition to the truncation of the evolved anti-noise channel, :math:`\Lambda^{-1}`, :math:`\tilde{O}` is also truncated as it is propagated through :math:`\Lambda^{-1}`. This is also a source of bias in the final mitigated expectation value.
 
 - While letting :math:`\tilde{O}` grow larger during propagation will increase its accuracy, measuring it requires taking many more shots on the QPU. Typically this increases the coefficients of the original Pauli terms in :math:`O`, along with creating many new Pauli terms with smaller coefficients. Both the rescaling of the original coefficients and the creation of new terms can increase sampling overhead. In practice, we truncate once more by measuring only the largest terms in :math:`\tilde{O}`.
-
-Citing this project
--------------------
-
-If you use this package in your research, please cite it according to ``CITATON.bib`` file included in this repository:
-
-.. literalinclude:: ../CITATION.bib
-   :language: bibtex
-
-Deprecation policy
-------------------
-
-We follow `semantic versioning <https://semver.org/>`_ and are guided by the principles in
-`Qiskit's deprecation policy <https://github.com/Qiskit/qiskit/blob/main/DEPRECATION.md>`_.
-We may occasionally make breaking changes in order to improve the user experience.
-When possible, we will keep old interfaces and mark them as deprecated, as long as they can co-exist with the
-new ones.
-Each substantial improvement, breaking change, or deprecation will be documented in the
-release notes.
 
 Contributing
 ------------
@@ -58,29 +56,58 @@ By participating, you are expected to uphold Qiskit's `code of conduct <https://
 
 We use `GitHub issues <https://github.com/Qiskit/qiskit-addon-pna/issues/new/choose>`_ for tracking requests and bugs.
 
+Citing this package
+-------------------
+
+If you use this package in your research, use the `CITATION.bib <https://github.com/Qiskit/qiskit-addon-pna/blob/main/CITATION.bib>`_ file in this project's repository to cite the appropriate reference(s).
+
 License
 -------
 
 `Apache License 2.0 <https://github.com/Qiskit/qiskit-addon-pna/blob/main/LICENSE.txt>`_
+
+Deprecation Policy
+------------------
+
+We follow `semantic versioning <https://semver.org/>`_. We may occasionally make breaking changes in order to
+improve the user experience. When possible, we will keep old interfaces and mark them as deprecated, as long
+as they can co-exist with the new ones. Each substantial improvement, breaking change, or deprecation will be
+documented in the `release notes <https://quantum.cloud.ibm.com/docs/api/qiskit-addon-sqd/release-notes>`_.
 
 .. _references:
 
 References
 ----------
 
-.. [1] Andrew Eddins, et al., `Computing noise-canceling observables via Pauli propagation <https://arxiv.org/abs/2606.20441>`_, arXiv:2606.20441 [quant-ph].
+.. _ref1:
 
-.. [2] Ewout van den Berg, et al., `Probabilistic error cancellation with sparse Pauli-Lindblad models on noisy quantum processors <https://arxiv.org/abs/2201.09866>`_, arXiv:2201.09866 [quant-ph].
+1. Andrew Eddins, et al., `Computing noise-canceling observables via Pauli propagation <https://arxiv.org/abs/2606.20441>`_, arXiv:2606.20441 [quant-ph].
 
-.. [3] Sergei Filippov, et al., `Scalable tensor-network error mitigation for near-term quantum computing <https://arxiv.org/abs/2307.11740>`_, arXiv:2307.11740 [quant-ph].
+.. _ref2:
+
+2. Ewout van den Berg, et al., `Probabilistic error cancellation with sparse Pauli-Lindblad models on noisy quantum processors <https://arxiv.org/abs/2201.09866>`_, arXiv:2201.09866 [quant-ph].
+
+.. _ref3:
+
+3. Sergei Filippov, et al., `Scalable tensor-network error mitigation for near-term quantum computing <https://arxiv.org/abs/2307.11740>`_, arXiv:2307.11740 [quant-ph].
 
 .. toctree::
-  :hidden:
-   
-   Documentation Home <self>
-   Installation Instructions <install>
-   Tutorials <tutorials/index>
-   How-To Guides <how_tos/index>
-   API Reference <apidocs/index>
-   GitHub <https://github.com/qiskit/qiskit-addon-pna>
-   Release Notes <release-notes>
+   :hidden:
+
+   Documentation home <self>
+   Installation instructions <install>
+   Guides <guides/index>
+   GitHub <https://github.com/Qiskit/qiskit-addon-pna>
+
+.. toctree::
+   :hidden:
+   :caption: Tutorials
+
+   Improving expectation values with propagated noise absorption <https://quantum.cloud.ibm.com/docs/tutorials/propagated-noise-absorption>
+
+.. toctree::
+   :hidden:
+   :caption: API reference
+
+   Python API reference <https://quantum.cloud.ibm.com/docs/api/qiskit-addon-pna>
+   Release notes <release-notes>

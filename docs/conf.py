@@ -20,7 +20,7 @@ from importlib.metadata import version as metadata_version
 # be documented.
 sys.path.insert(0, os.path.abspath(".."))
 
-project = "Qiskit addon: Propagated noise absorption"
+project = "Propagated noise absorption"
 project_copyright = "2025, Qiskit addons team"
 description = "Generate an error-mitigating observable by propagating it through the anti-noise channel affecting circuit gates."
 author = "Qiskit addons team"
