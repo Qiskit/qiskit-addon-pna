@@ -29,7 +29,7 @@ from pauli_prop.propagation import (
 from qiskit.circuit import QuantumCircuit
 from qiskit.quantum_info import Pauli, PauliLindbladMap, PauliList, SparsePauliOp
 from qiskit_aer.noise.errors import PauliLindbladError
-from samplomatic.annotations import InjectNoise
+from samplomatic.annotations import InjectNoise, Twirl
 from samplomatic.annotations.inject_noise import InjectionSite
 from samplomatic.utils import get_annotation, undress_box
 
@@ -480,8 +480,8 @@ def _inject_learned_noise_to_boxed_circuit(
                 # Then, handle noise injection and 2q-gates (order dependent on `place_noise_before`).
                 # If the box is `right-dressed`, first handle noise injections and 2q-gates (order
                 # dependent on `place_noise_before`), then add the 1q-gate instructions.
-                if box.body.data[0].operation.num_qubits == 1:
-                    # First instruction is a 1q-gate => box is left dressed.
+                twirl = get_annotation(box, Twirl)
+                if twirl is not None and twirl.dressing == "left":
                     # Add the 1q-gates first.
                     for internal_instruction in box.body:
                         if internal_instruction not in undressed_box.body:
@@ -504,7 +504,7 @@ def _inject_learned_noise_to_boxed_circuit(
                     if not inject_noise_before:
                         unboxed_noisy_circuit.append(noise_instruction, qargs=qargs)
                 else:
-                    # First instruction is NOT a 1q-gate => box is right dressed.
+                    # Right-dressed (or un-annotated) box: hard content precedes the dressing.
                     # Inject noise (before)
                     if inject_noise_before:
                         unboxed_noisy_circuit.append(
