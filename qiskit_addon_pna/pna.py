@@ -471,7 +471,7 @@ def _inject_learned_noise_to_boxed_circuit(
                 pauli_lindblad_map = refs_to_pauli_lindblad_maps[injected_noise.ref]
                 inject_noise_before = injected_noise.site == InjectionSite.BEFORE
                 # Injected noise acts on the box's qubits in canonical (sorted) order:
-                qargs = [q for q in unboxed_noisy_circuit.qubits if q in circ_inst.qubits]
+                qargs = sorted(circ_inst.qubits, key=lambda q: unboxed_noisy_circuit.find_bit(q).index)
 
                 if include_barriers:
                     unboxed_noisy_circuit.barrier()
