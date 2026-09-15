@@ -455,8 +455,8 @@ def _inject_learned_noise_to_boxed_circuit(
             box = circ_inst.operation
 
             # Map each body bit to the outer bit the box binds it to:
-            bit_map = dict(zip(box.body.qubits, circ_inst.qubits))
-            bit_map.update(zip(box.body.clbits, circ_inst.clbits))
+            bit_map = dict(zip(box.body.qubits, circ_inst.qubits, strict=True))
+            bit_map.update(zip(box.body.clbits, circ_inst.clbits, strict=True))
 
             injected_noise = get_annotation(box, InjectNoise)
             if injected_noise is not None:
