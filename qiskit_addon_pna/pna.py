@@ -30,6 +30,7 @@ from qiskit.circuit import QuantumCircuit
 from qiskit.quantum_info import Pauli, PauliLindbladMap, PauliList, SparsePauliOp
 from qiskit_aer.noise.errors import PauliLindbladError
 from samplomatic.annotations import InjectNoise
+from samplomatic.annotations.inject_noise import InjectionSite
 from samplomatic.utils import get_annotation, undress_box
 
 circuit_as_rot_gates: RotationGates
@@ -52,7 +53,6 @@ def generate_noise_mitigating_observable(
     print_progress: bool = False,
     atol: float = 1e-8,
     batch_size: int = 1,
-    inject_noise_before: bool = True,
     mp_start_method: str | None = "spawn",
 ) -> SparsePauliOp:
     r"""Generate a noise-mitigating observable by propagating it through the inverse of a learned noise channel.
@@ -108,8 +108,6 @@ def generate_noise_mitigating_observable(
             This coarse-grain application of anti-noise to the observable comes at a loss of accuracy related to the probability
             that more than one error in the batch occurs when the circuit is run. This should usually not be set higher than
             ``max(1, num_processes // 2)``.
-        inject_noise_before: If ``True``, the Pauli Lindblad noise instruction will be inserted before its
-            corresponding 2q-gate layer. Otherwise, it will be inserted after it, defaults to ``True``.
         mp_start_method: The method to use when starting new parallel processes. Valid values are ``fork``, ``spawn``,
             ``forkserver``, and ``None``. If ``None``, the default method will be used.
 
@@ -182,7 +180,6 @@ def generate_noise_mitigating_observable(
         refs_to_noise_model_map,
         include_barriers=False,
         remove_final_measurements=True,
-        inject_noise_before=inject_noise_before,
     )
 
     if not any(
@@ -430,7 +427,6 @@ def _inject_learned_noise_to_boxed_circuit(
     refs_to_pauli_lindblad_maps: dict[str, PauliLindbladMap] | None,
     include_barriers: bool = False,
     remove_final_measurements: bool = True,
-    inject_noise_before: bool = True,
 ) -> QuantumCircuit:
     """Generate an unboxed circuit with the noise injected as ``PauliLindbladError`` instructions.
 
@@ -439,8 +435,6 @@ def _inject_learned_noise_to_boxed_circuit(
         refs_to_pauli_lindblad_maps: A dictionary mapping `InjectNoise.ref` to corresponding `PauliLindbladMap`.
         include_barriers: A boolean to decide whether or not to insert barriers around `LayerError` instructions.
         remove_final_measurements: If `True` remove any boxed final measure instructions from the circuit.
-        inject_noise_before: If `True`, the Pauli Lindblad noise instruction will be inserted before its
-         corresponding 2q-gate layer. Otherwise, it will be inserted after it, defaults to `True`.
 
     Returns:
         A `QuantumCircuit` without boxes and with `PauliLindbladError` instructions inserted according to the given mapping.
@@ -467,6 +461,7 @@ def _inject_learned_noise_to_boxed_circuit(
                         f"ref: {injected_noise.ref} is missing from Pauli Lindblad Map."
                     )
                 pauli_lindblad_map = refs_to_pauli_lindblad_maps[injected_noise.ref]
+                inject_noise_before = injected_noise.site == InjectionSite.BEFORE
 
                 if include_barriers:
                     unboxed_noisy_circuit.barrier()
