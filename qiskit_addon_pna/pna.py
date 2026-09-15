@@ -422,6 +422,15 @@ def _evolve_and_apply_generator(
     return new_terms
 
 
+def _unbox_append(circuit, bit_map, circ_inst):
+    """Append a box-body ``circ_inst`` onto ``circuit`` at the outer bits the box binds."""
+    circuit.append(
+        circ_inst.operation,
+        [bit_map[q] for q in circ_inst.qubits],
+        [bit_map[c] for c in circ_inst.clbits],
+    )
+
+
 def _inject_learned_noise_to_boxed_circuit(
     boxed_circuit: QuantumCircuit,
     refs_to_pauli_lindblad_maps: dict[str, PauliLindbladMap] | None,
@@ -441,14 +450,13 @@ def _inject_learned_noise_to_boxed_circuit(
     """
     unboxed_noisy_circuit = QuantumCircuit.copy_empty_like(boxed_circuit)
     last_instruction_idx = len(boxed_circuit.data) - 1
-    for idx, inst in enumerate(boxed_circuit.data):
-        if inst.name == "box":
-            box = inst.operation
+    for idx, circ_inst in enumerate(boxed_circuit.data):
+        if circ_inst.name == "box":
+            box = circ_inst.operation
 
-            # Collect the circuit's qargs which are used in the instruction.
-            # Needed for mapping the box instruction to the correct qubits
-            # in the new unboxed circuit.
-            qargs = [q for q in unboxed_noisy_circuit.qubits if q in inst.qubits]
+            # Map each body bit to the outer bit the box binds it to:
+            bit_map = dict(zip(box.body.qubits, circ_inst.qubits))
+            bit_map.update(zip(box.body.clbits, circ_inst.clbits))
 
             injected_noise = get_annotation(box, InjectNoise)
             if injected_noise is not None:
@@ -462,6 +470,8 @@ def _inject_learned_noise_to_boxed_circuit(
                     )
                 pauli_lindblad_map = refs_to_pauli_lindblad_maps[injected_noise.ref]
                 inject_noise_before = injected_noise.site == InjectionSite.BEFORE
+                # Injected noise acts on the box's qubits in canonical (sorted) order:
+                qargs = [q for q in unboxed_noisy_circuit.qubits if q in circ_inst.qubits]
 
                 if include_barriers:
                     unboxed_noisy_circuit.barrier()
@@ -492,16 +502,16 @@ def _inject_learned_noise_to_boxed_circuit(
                     )
                 if twirl.dressing == "left":
                     for internal_instruction in dressing:
-                        unboxed_noisy_circuit.append(internal_instruction)
+                        _unbox_append(unboxed_noisy_circuit, bit_map, internal_instruction)
                 if inject_noise_before:
                     unboxed_noisy_circuit.append(noise_instruction, qargs=qargs)
                 for internal_instruction in hard:
-                    unboxed_noisy_circuit.append(internal_instruction)
+                    _unbox_append(unboxed_noisy_circuit, bit_map, internal_instruction)
                 if not inject_noise_before:
                     unboxed_noisy_circuit.append(noise_instruction, qargs=qargs)
                 if twirl.dressing == "right":
                     for internal_instruction in dressing:
-                        unboxed_noisy_circuit.append(internal_instruction)
+                        _unbox_append(unboxed_noisy_circuit, bit_map, internal_instruction)
 
             # Add the boxed instructions as is (not injecting any noise).
             # We assume that measurements do not have InjectNoise annotation.
@@ -517,20 +527,15 @@ def _inject_learned_noise_to_boxed_circuit(
                     for internal_instruction in box.body:
                         if internal_instruction.name == "measure":
                             continue
-                        else:
-                            unboxed_noisy_circuit.append(
-                                internal_instruction,
-                            )
+                        _unbox_append(unboxed_noisy_circuit, bit_map, internal_instruction)
                 # Add instructions in order.
                 else:
                     for internal_instruction in box.body:
-                        unboxed_noisy_circuit.append(
-                            instruction=internal_instruction,
-                        )
+                        _unbox_append(unboxed_noisy_circuit, bit_map, internal_instruction)
 
         # Add the instruction as is (it does not have a box)
         else:
-            unboxed_noisy_circuit.append(instruction=inst)
+            unboxed_noisy_circuit.append(instruction=circ_inst)
 
     return unboxed_noisy_circuit
 
