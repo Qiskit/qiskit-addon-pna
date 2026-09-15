@@ -125,6 +125,7 @@ def generate_noise_mitigating_observable(
         ValueError: ``max_obs_terms`` should be larger than the length of ``observable``
         ValueError: Incompatible noisy circuit and refs_to_noise_model_map
         ValueError: The observable must only contain real-valued coefficients
+        ValueError: A box carries an ``InjectNoise`` annotation but no ``Twirl`` annotation
     """
     if observable.num_qubits != noisy_circuit.num_qubits:
         raise ValueError(f"{observable.num_qubits = } does not match {noisy_circuit.num_qubits = }")
@@ -486,7 +487,9 @@ def _inject_learned_noise_to_boxed_circuit(
                     else inject_noise_before
                 )
                 # Injected noise acts on the box's qubits in canonical (sorted) order:
-                qargs = sorted(circ_inst.qubits, key=lambda q: unboxed_noisy_circuit.find_bit(q).index)
+                qargs = sorted(
+                    circ_inst.qubits, key=lambda q: unboxed_noisy_circuit.find_bit(q).index
+                )
 
                 if include_barriers:
                     unboxed_noisy_circuit.barrier()
@@ -501,7 +504,10 @@ def _inject_learned_noise_to_boxed_circuit(
                 undressed_body = list(undress_box(box).body)
                 hard, dressing, cursor = [], [], 0
                 for internal_instruction in box.body:
-                    if cursor < len(undressed_body) and internal_instruction == undressed_body[cursor]:
+                    if (
+                        cursor < len(undressed_body)
+                        and internal_instruction == undressed_body[cursor]
+                    ):
                         hard.append(internal_instruction)
                         cursor += 1
                     else:
