@@ -492,16 +492,16 @@ def _inject_learned_noise_to_boxed_circuit(
                     )
                 if twirl.dressing == "left":
                     for internal_instruction in dressing:
-                        unboxed_noisy_circuit.append(internal_instruction, qargs=qargs)
+                        unboxed_noisy_circuit.append(internal_instruction)
                 if inject_noise_before:
                     unboxed_noisy_circuit.append(noise_instruction, qargs=qargs)
                 for internal_instruction in hard:
-                    unboxed_noisy_circuit.append(internal_instruction, qargs=qargs)
+                    unboxed_noisy_circuit.append(internal_instruction)
                 if not inject_noise_before:
                     unboxed_noisy_circuit.append(noise_instruction, qargs=qargs)
                 if twirl.dressing == "right":
                     for internal_instruction in dressing:
-                        unboxed_noisy_circuit.append(internal_instruction, qargs=qargs)
+                        unboxed_noisy_circuit.append(internal_instruction)
 
             # Add the boxed instructions as is (not injecting any noise).
             # We assume that measurements do not have InjectNoise annotation.
@@ -520,18 +520,15 @@ def _inject_learned_noise_to_boxed_circuit(
                         else:
                             unboxed_noisy_circuit.append(
                                 internal_instruction,
-                                qargs=qargs,
                             )
                 # Add instructions in order.
                 else:
                     for internal_instruction in box.body:
                         unboxed_noisy_circuit.append(
                             instruction=internal_instruction,
-                            qargs=qargs,
                         )
 
-        # Add the instruction as is (it does not have a box),
-        # mapping qargs is not needed in that case.
+        # Add the instruction as is (it does not have a box)
         else:
             unboxed_noisy_circuit.append(instruction=inst)
 
