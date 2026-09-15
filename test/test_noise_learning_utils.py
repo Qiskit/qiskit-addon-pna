@@ -287,50 +287,45 @@ class TestNoiseInjection(unittest.TestCase):
 
     def test_inject_learned_noise_default_reads_annotation_site(self):
         # With inject_noise_before=None (default), each layer's noise is placed according to that
-        # box's InjectNoise.site.  The setUp fixtures are annotated site="before" (the default), so
-        # the result matches the explicit inject_noise_before=True circuits.
+        # box's InjectNoise.site.  Sites are set explicitly here (not relying on the InjectNoise
+        # default, which varies by samplomatic version), and the same left-dressed body structure
+        # as the fixtures is used so the results match the "before"/"after" expected circuits.
+        def left_dressed_boxed(site):
+            circuit = QuantumCircuit(4)
+            with circuit.box(
+                [Twirl(dressing="left"), InjectNoise(ref="r0", modifier_ref="r0", site=site)]
+            ):
+                circuit.rx(3 * np.pi / 8, 0)
+                circuit.sdg(0)
+                circuit.rx(3 * np.pi / 8, 1)
+                circuit.sdg(1)
+                circuit.cz(0, 1)
+                circuit.rx(3 * np.pi / 8, 2)
+                circuit.sdg(2)
+                circuit.rx(3 * np.pi / 8, 3)
+                circuit.sdg(3)
+                circuit.cz(2, 3)
+            with circuit.box(
+                [Twirl(dressing="left"), InjectNoise(ref="r1", modifier_ref="r1", site=site)]
+            ):
+                circuit.rx(3 * np.pi / 8, 1)
+                circuit.sdg(1)
+                circuit.rx(3 * np.pi / 8, 2)
+                circuit.sdg(2)
+                circuit.cz(1, 2)
+            return circuit
+
+        # site="before" -> default places noise before the 2q content
         self.assertEqual(
             _inject_learned_noise_to_boxed_circuit(
-                self.manually_boxed_circuit_left_dressed,
-                self.refs_to_noise_models_left_dressing,
+                left_dressed_boxed("before"), self.refs_to_noise_models_left_dressing
             ),
             self.noisy_before_circuit_left_dressed,
         )
+        # site="after" -> default places noise after the 2q content
         self.assertEqual(
             _inject_learned_noise_to_boxed_circuit(
-                self.manually_boxed_circuit_right_dressed,
-                self.refs_to_noise_models_right_dressing,
-            ),
-            self.noisy_before_circuit_right_dressed,
-        )
-
-        # Boxes annotated site="after": the default must place noise AFTER the 2q content (same
-        # structure as the left-dressed fixture, so it matches the "after" expected circuit).
-        after_boxed = QuantumCircuit(4)
-        with after_boxed.box(
-            [Twirl(dressing="left"), InjectNoise(ref="r0", modifier_ref="r0", site="after")]
-        ):
-            after_boxed.rx(3 * np.pi / 8, 0)
-            after_boxed.sdg(0)
-            after_boxed.rx(3 * np.pi / 8, 1)
-            after_boxed.sdg(1)
-            after_boxed.cz(0, 1)
-            after_boxed.rx(3 * np.pi / 8, 2)
-            after_boxed.sdg(2)
-            after_boxed.rx(3 * np.pi / 8, 3)
-            after_boxed.sdg(3)
-            after_boxed.cz(2, 3)
-        with after_boxed.box(
-            [Twirl(dressing="left"), InjectNoise(ref="r1", modifier_ref="r1", site="after")]
-        ):
-            after_boxed.rx(3 * np.pi / 8, 1)
-            after_boxed.sdg(1)
-            after_boxed.rx(3 * np.pi / 8, 2)
-            after_boxed.sdg(2)
-            after_boxed.cz(1, 2)
-        self.assertEqual(
-            _inject_learned_noise_to_boxed_circuit(
-                after_boxed, self.refs_to_noise_models_left_dressing
+                left_dressed_boxed("after"), self.refs_to_noise_models_left_dressing
             ),
             self.noisy_after_circuit_left_dressed,
         )
