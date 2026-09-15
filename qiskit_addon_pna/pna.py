@@ -587,7 +587,7 @@ def _pauli_lindblad_map_to_layer_error(pauli_lindblad_map: PauliLindbladMap) -> 
     """
     sparse_list = pauli_lindblad_map.to_sparse_list()
     spare_pauli_op = SparsePauliOp.from_sparse_list(sparse_list, pauli_lindblad_map.num_qubits)
-    noise_instruction = PauliLindbladError(spare_pauli_op.paulis, spare_pauli_op.coeffs)
+    noise_instruction = PauliLindbladError(spare_pauli_op.paulis, spare_pauli_op.coeffs.real)
     return noise_instruction
 
 
