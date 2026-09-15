@@ -472,74 +472,36 @@ def _inject_learned_noise_to_boxed_circuit(
                 if include_barriers:
                     unboxed_noisy_circuit.barrier()
 
-                # The undressed box is needed in order to know where to inject the noise.
-                undressed_box = undress_box(box)
+                # Split body into hard content (kept by ``undress_box``) and "dressing" of 1Q gates:
+                undressed_body = list(undress_box(box).body)
+                hard, dressing, cursor = [], [], 0
+                for internal_instruction in box.body:
+                    if cursor < len(undressed_body) and internal_instruction == undressed_body[cursor]:
+                        hard.append(internal_instruction)
+                        cursor += 1
+                    else:
+                        dressing.append(internal_instruction)
 
-                # The noise needs to be injected in proximity to the 2q-gate corresponding instructions.
-                # If the original box is 'left-dressed', start by adding the 1q-gate instructions.
-                # Then, handle noise injection and 2q-gates (order dependent on `place_noise_before`).
-                # If the box is `right-dressed`, first handle noise injections and 2q-gates (order
-                # dependent on `place_noise_before`), then add the 1q-gate instructions.
+                # Insert dressing gates at start or end, according to twirl.dressing.
+                # Inject noise adjacent to the hard content, according to InjectNoise.site.
                 twirl = get_annotation(box, Twirl)
-                if twirl is not None and twirl.dressing == "left":
-                    # Add the 1q-gates first.
-                    for internal_instruction in box.body:
-                        if internal_instruction not in undressed_box.body:
-                            unboxed_noisy_circuit.append(
-                                instruction=internal_instruction,
-                                qargs=qargs,
-                            )
-                    # Inject noise (before)
-                    if inject_noise_before:
-                        unboxed_noisy_circuit.append(noise_instruction, qargs=qargs)
-
-                    # Add the 2q-gates
-                    for internal_instruction in box.body:
-                        if internal_instruction in undressed_box.body:
-                            unboxed_noisy_circuit.append(
-                                instruction=internal_instruction,
-                                qargs=qargs,
-                            )
-                    # Inject noise (after)
-                    if not inject_noise_before:
-                        unboxed_noisy_circuit.append(noise_instruction, qargs=qargs)
-                else:
-                    # Right-dressed (or un-annotated) box: hard content precedes the dressing.
-                    # Inject noise (before)
-                    if inject_noise_before:
-                        unboxed_noisy_circuit.append(
-                            noise_instruction,
-                            qargs=qargs,
-                        )
-                        # Add rest of 2q-gate and 1q-gate instructions in order
-                        for internal_instruction in box.body:
-                            unboxed_noisy_circuit.append(
-                                instruction=internal_instruction,
-                                qargs=qargs,
-                            )
-                    # Inject noise (after)
-                    if not inject_noise_before:
-                        # Add the 2q-gate instructions in order
-                        for internal_instruction in box.body:
-                            if internal_instruction in undressed_box.body:
-                                unboxed_noisy_circuit.append(
-                                    instruction=internal_instruction,
-                                    qargs=qargs,
-                                )
-
-                        # Inject noise
-                        unboxed_noisy_circuit.append(
-                            noise_instruction,
-                            qargs=qargs,
-                        )
-
-                        # Add rest of 1q-gate instructions in order
-                        for internal_instruction in box.body:
-                            if internal_instruction not in undressed_box.body:
-                                unboxed_noisy_circuit.append(
-                                    instruction=internal_instruction,
-                                    qargs=qargs,
-                                )
+                if twirl is None:
+                    raise ValueError(
+                        f"Box with InjectNoise (ref '{injected_noise.ref}') has no Twirl "
+                        "annotation, so its dressing side is undefined."
+                    )
+                if twirl.dressing == "left":
+                    for internal_instruction in dressing:
+                        unboxed_noisy_circuit.append(internal_instruction, qargs=qargs)
+                if inject_noise_before:
+                    unboxed_noisy_circuit.append(noise_instruction, qargs=qargs)
+                for internal_instruction in hard:
+                    unboxed_noisy_circuit.append(internal_instruction, qargs=qargs)
+                if not inject_noise_before:
+                    unboxed_noisy_circuit.append(noise_instruction, qargs=qargs)
+                if twirl.dressing == "right":
+                    for internal_instruction in dressing:
+                        unboxed_noisy_circuit.append(internal_instruction, qargs=qargs)
 
             # Add the boxed instructions as is (not injecting any noise).
             # We assume that measurements do not have InjectNoise annotation.
