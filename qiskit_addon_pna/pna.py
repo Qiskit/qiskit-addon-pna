@@ -53,6 +53,7 @@ def generate_noise_mitigating_observable(
     print_progress: bool = False,
     atol: float = 1e-8,
     batch_size: int = 1,
+    inject_noise_before: bool | None = None,
     mp_start_method: str | None = "spawn",
 ) -> SparsePauliOp:
     r"""Generate a noise-mitigating observable by propagating it through the inverse of a learned noise channel.
@@ -108,6 +109,10 @@ def generate_noise_mitigating_observable(
             This coarse-grain application of anti-noise to the observable comes at a loss of accuracy related to the probability
             that more than one error in the batch occurs when the circuit is run. This should usually not be set higher than
             ``max(1, num_processes // 2)``.
+        inject_noise_before: Controls where each layer's noise is placed relative to its 2q-gate content.
+            If ``None`` (default), the placement is read per layer from that box's ``InjectNoise.site``.
+            If ``True``/``False``, the noise is placed before/after the 2q-gate content for every layer,
+            overriding the annotations.
         mp_start_method: The method to use when starting new parallel processes. Valid values are ``fork``, ``spawn``,
             ``forkserver``, and ``None``. If ``None``, the default method will be used.
 
@@ -180,6 +185,7 @@ def generate_noise_mitigating_observable(
         refs_to_noise_model_map,
         include_barriers=False,
         remove_final_measurements=True,
+        inject_noise_before=inject_noise_before,
     )
 
     if not any(
@@ -436,6 +442,7 @@ def _inject_learned_noise_to_boxed_circuit(
     refs_to_pauli_lindblad_maps: dict[str, PauliLindbladMap] | None,
     include_barriers: bool = False,
     remove_final_measurements: bool = True,
+    inject_noise_before: bool | None = None,
 ) -> QuantumCircuit:
     """Generate an unboxed circuit with the noise injected as ``PauliLindbladError`` instructions.
 
@@ -444,6 +451,9 @@ def _inject_learned_noise_to_boxed_circuit(
         refs_to_pauli_lindblad_maps: A dictionary mapping `InjectNoise.ref` to corresponding `PauliLindbladMap`.
         include_barriers: A boolean to decide whether or not to insert barriers around `LayerError` instructions.
         remove_final_measurements: If `True` remove any boxed final measure instructions from the circuit.
+        inject_noise_before: If `None` (default), each layer's noise is placed before or after its
+            2q-gate content according to that box's `InjectNoise.site`. If `True`/`False`, the noise
+            is placed before/after the 2q-gate content for every layer, overriding the annotations.
 
     Returns:
         A `QuantumCircuit` without boxes and with `PauliLindbladError` instructions inserted according to the given mapping.
@@ -469,7 +479,12 @@ def _inject_learned_noise_to_boxed_circuit(
                         f"ref: {injected_noise.ref} is missing from Pauli Lindblad Map."
                     )
                 pauli_lindblad_map = refs_to_pauli_lindblad_maps[injected_noise.ref]
-                inject_noise_before = injected_noise.site == InjectionSite.BEFORE
+                # None -> use this box's annotated site; a bool overrides every box (legacy).
+                noise_before = (
+                    injected_noise.site == InjectionSite.BEFORE
+                    if inject_noise_before is None
+                    else inject_noise_before
+                )
                 # Injected noise acts on the box's qubits in canonical (sorted) order:
                 qargs = sorted(circ_inst.qubits, key=lambda q: unboxed_noisy_circuit.find_bit(q).index)
 
@@ -503,11 +518,11 @@ def _inject_learned_noise_to_boxed_circuit(
                 if twirl.dressing == "left":
                     for internal_instruction in dressing:
                         _unbox_append(unboxed_noisy_circuit, bit_map, internal_instruction)
-                if inject_noise_before:
+                if noise_before:
                     unboxed_noisy_circuit.append(noise_instruction, qargs=qargs)
                 for internal_instruction in hard:
                     _unbox_append(unboxed_noisy_circuit, bit_map, internal_instruction)
-                if not inject_noise_before:
+                if not noise_before:
                     unboxed_noisy_circuit.append(noise_instruction, qargs=qargs)
                 if twirl.dressing == "right":
                     for internal_instruction in dressing:
