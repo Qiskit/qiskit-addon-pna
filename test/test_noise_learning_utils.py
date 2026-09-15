@@ -284,3 +284,64 @@ class TestNoiseInjection(unittest.TestCase):
             inject_noise_before=False,
         )
         self.assertEqual(noisy_after_circuit, self.noisy_after_circuit_right_dressed)
+
+    def test_inject_learned_noise_default_reads_annotation_site(self):
+        # With inject_noise_before=None (default), each layer's noise is placed according to that
+        # box's InjectNoise.site.  The setUp fixtures are annotated site="before" (the default), so
+        # the result matches the explicit inject_noise_before=True circuits.
+        self.assertEqual(
+            _inject_learned_noise_to_boxed_circuit(
+                self.manually_boxed_circuit_left_dressed,
+                self.refs_to_noise_models_left_dressing,
+            ),
+            self.noisy_before_circuit_left_dressed,
+        )
+        self.assertEqual(
+            _inject_learned_noise_to_boxed_circuit(
+                self.manually_boxed_circuit_right_dressed,
+                self.refs_to_noise_models_right_dressing,
+            ),
+            self.noisy_before_circuit_right_dressed,
+        )
+
+        # Boxes annotated site="after": the default must place noise AFTER the 2q content (same
+        # structure as the left-dressed fixture, so it matches the "after" expected circuit).
+        after_boxed = QuantumCircuit(4)
+        with after_boxed.box(
+            [Twirl(dressing="left"), InjectNoise(ref="r0", modifier_ref="r0", site="after")]
+        ):
+            after_boxed.rx(3 * np.pi / 8, 0)
+            after_boxed.sdg(0)
+            after_boxed.rx(3 * np.pi / 8, 1)
+            after_boxed.sdg(1)
+            after_boxed.cz(0, 1)
+            after_boxed.rx(3 * np.pi / 8, 2)
+            after_boxed.sdg(2)
+            after_boxed.rx(3 * np.pi / 8, 3)
+            after_boxed.sdg(3)
+            after_boxed.cz(2, 3)
+        with after_boxed.box(
+            [Twirl(dressing="left"), InjectNoise(ref="r1", modifier_ref="r1", site="after")]
+        ):
+            after_boxed.rx(3 * np.pi / 8, 1)
+            after_boxed.sdg(1)
+            after_boxed.rx(3 * np.pi / 8, 2)
+            after_boxed.sdg(2)
+            after_boxed.cz(1, 2)
+        self.assertEqual(
+            _inject_learned_noise_to_boxed_circuit(
+                after_boxed, self.refs_to_noise_models_left_dressing
+            ),
+            self.noisy_after_circuit_left_dressed,
+        )
+
+    def test_inject_learned_noise_raises_without_twirl(self):
+        # A noisy box must carry a Twirl annotation, otherwise its dressing side is undefined.
+        circuit = QuantumCircuit(2)
+        with circuit.box([InjectNoise(ref="r0", modifier_ref="r0")]):
+            circuit.cz(0, 1)
+        with self.assertRaises(ValueError):
+            _inject_learned_noise_to_boxed_circuit(
+                circuit,
+                {"r0": PauliLindbladMap.from_list([("ZZ", 0.1)], num_qubits=2)},
+            )
