@@ -130,6 +130,8 @@ def generate_noise_mitigating_observable(
     # Default num_processes is all cores minus one
     if num_processes < 1:
         raise ValueError("num_processes must be integer greater than or equal to 1.")
+    # Convert first: len() of a Pauli is its number of qubits, not its number of terms.
+    observable = SparsePauliOp(observable)
     if max_obs_terms < len(observable):
         raise ValueError("max_obs_terms must be larger than the length of observable.")
 
@@ -145,7 +147,6 @@ def generate_noise_mitigating_observable(
                             f"Noise model (ref: {anno.ref}) has a different number of qubits ({refs_to_noise_model_map[anno.ref].num_qubits}) than the associated noisy box ({inst.operation.num_qubits})"
                         )
 
-    observable = SparsePauliOp(observable)
     original_obs_length = len(observable)
 
     z = observable.paulis.z

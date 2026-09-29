@@ -1,0 +1,8 @@
+---
+fixes:
+  - |
+    :func:`qiskit_addon_pna.generate_noise_mitigating_observable` no longer rejects a
+    :class:`~qiskit.quantum_info.Pauli` observable when ``max_obs_terms`` is smaller than its number
+    of qubits. The observable is now converted to a :class:`~qiskit.quantum_info.SparsePauliOp`
+    before its length is checked, because ``len()`` of a ``Pauli`` returns its number of qubits
+    rather than its number of terms.

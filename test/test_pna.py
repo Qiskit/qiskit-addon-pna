@@ -142,6 +142,14 @@ class TestPNA(unittest.TestCase):
 
         assert np.isclose(exact_ev, mitigated_ev, atol=1e-3)
 
+    def test_pauli_observable(self):
+        # A Pauli is a single term however many qubits it acts on, so max_obs_terms=1 must be accepted.
+        qc = QuantumCircuit(4)
+        qc.rx(0.3, range(4))
+        pauli = SparsePauliOp("ZZZZ").paulis[0]  # a Pauli, not a SparsePauliOp
+        otilde = generate_noise_mitigating_observable(qc, pauli, max_err_terms=1, max_obs_terms=1)
+        assert otilde == SparsePauliOp("ZZZZ")
+
     def test_pna_inputs(self):
         qc = QuantumCircuit(2)
         spo = SparsePauliOp("Z")
