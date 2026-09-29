@@ -140,6 +140,8 @@ def generate_noise_mitigating_observable(
                 if anno is None:
                     continue
                 else:
+                    if anno.ref not in refs_to_noise_model_map:
+                        raise ValueError(f"ref: {anno.ref} is missing from Pauli Lindblad Map.")
                     if refs_to_noise_model_map[anno.ref].num_qubits != inst.operation.num_qubits:
                         raise ValueError(
                             f"Noise model (ref: {anno.ref}) has a different number of qubits ({refs_to_noise_model_map[anno.ref].num_qubits}) than the associated noisy box ({inst.operation.num_qubits})"

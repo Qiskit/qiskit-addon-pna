@@ -188,3 +188,16 @@ class TestPNA(unittest.TestCase):
         actual = _keep_k_largest(spo, k=2, normalize=True)
         assert np.all(actual[0].to_matrix() == expected[0].to_matrix())
         assert actual[1] == expected[1]
+
+    def test_missing_noise_ref(self):
+        # A map that covers some noisy boxes but not all must raise the documented ValueError.
+        qc = QuantumCircuit(2)
+        with qc.box([InjectNoise("r0")]):
+            qc.cx(0, 1)
+        with qc.box([InjectNoise("r1")]):
+            qc.cx(0, 1)
+        noise_model = PauliLindbladMap.from_list([("XX", 0.01)])
+        with self.assertRaisesRegex(ValueError, "r1"):
+            generate_noise_mitigating_observable(
+                qc, SparsePauliOp("ZZ"), {"r0": noise_model}, max_err_terms=10, max_obs_terms=10
+            )

@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    :func:`qiskit_addon_pna.generate_noise_mitigating_observable` now raises a ``ValueError`` naming
+    the missing reference when ``refs_to_noise_model_map`` has no entry for one of the circuit's
+    ``InjectNoise`` boxes. Previously a non-empty map with a missing reference raised a bare
+    ``KeyError`` during input validation.
