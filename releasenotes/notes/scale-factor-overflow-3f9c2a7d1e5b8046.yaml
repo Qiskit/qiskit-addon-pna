@@ -1,0 +1,8 @@
+---
+fixes:
+  - |
+    :func:`qiskit_addon_pna.generate_noise_mitigating_observable` now raises a ``ValueError`` before
+    propagating when the anti-noise would rescale the observable by a factor that overflows float64.
+    Previously the propagation ran to completion and returned an observable whose coefficients were
+    all ``inf`` or ``NaN``, which typically surfaced much later, for example as a non-Hermitian
+    observable error in an Estimator.

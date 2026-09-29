@@ -122,6 +122,7 @@ def generate_noise_mitigating_observable(
         ValueError: ``max_obs_terms`` should be larger than the length of ``observable``
         ValueError: Incompatible noisy circuit and refs_to_noise_model_map
         ValueError: The observable must only contain real-valued coefficients
+        ValueError: The anti-noise would rescale the observable by a factor that overflows float64
     """
     if observable.num_qubits != noisy_circuit.num_qubits:
         raise ValueError(f"{observable.num_qubits = } does not match {noisy_circuit.num_qubits = }")
@@ -206,6 +207,18 @@ def generate_noise_mitigating_observable(
     # evolve all antinoise channels forwards:
     channels = [inst for inst in noisy_circuit if inst.name == "quantum_channel"]
     num_generators = sum([len(channel.operation._quantum_error.generators) for channel in channels])
+
+    # The observable is rescaled by the product of (1 - quasiprob) over every generator once the
+    # propagation has finished. If that product leaves the float64 range, every coefficient of the
+    # result becomes inf or NaN, and only after the whole propagation has run. Fail before it starts.
+    log_scale_factor = _log_scale_factor(channels)
+    if log_scale_factor > np.log(np.finfo(np.float64).max):
+        raise ValueError(
+            "The noise is too strong to mitigate: the anti-noise would rescale the observable by a "
+            f"factor of about 10^{log_scale_factor / np.log(10):.0f}, which overflows float64 and "
+            "would make every coefficient of the returned observable inf or NaN."
+        )
+
     latest_generator_job = None
     num_unfinished_this_batch = batch_size
     num_unfinished_total = num_generators
@@ -353,6 +366,21 @@ def _initialize_pool(
     max_obs_terms = _max_obs_terms
     atol = _atol
     num_qubits = _num_qubits
+
+
+def _log_scale_factor(channels) -> float:
+    """Natural logarithm of the factor the anti-noise rescales the observable by.
+
+    This is the product of ``1 - quasiprob`` over every generator, as yielded by
+    :func:`_generator_generator`. With ``r`` the rate of an inverted generator,
+    ``1 - quasiprob = (1 + exp(-2 r)) / 2``, whose logarithm is evaluated with ``logaddexp`` so that
+    it stays finite for rates whose product overflows.
+    """
+    log_factor = 0.0
+    for channel in channels:
+        rates = channel.operation._quantum_error.inverse().rates
+        log_factor += float(np.sum(np.logaddexp(0.0, -2 * rates) - np.log(2)))
+    return log_factor
 
 
 def _generator_generator(noisy_circuit):

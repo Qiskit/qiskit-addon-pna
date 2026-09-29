@@ -16,7 +16,7 @@ import unittest
 
 import numpy as np
 from qiskit import QuantumCircuit
-from qiskit.quantum_info import PauliLindbladMap, SparsePauliOp
+from qiskit.quantum_info import PauliLindbladMap, PauliList, SparsePauliOp
 from qiskit_addon_pna import generate_noise_mitigating_observable
 from qiskit_addon_pna.pna import _keep_k_largest
 from qiskit_aer import AerSimulator
@@ -169,6 +169,17 @@ class TestPNA(unittest.TestCase):
             generate_noise_mitigating_observable(qc, spo, max_err_terms=1, max_obs_terms=1)
         with self.assertRaises(ValueError):
             generate_noise_mitigating_observable(qc, spo, {}, max_err_terms=1, max_obs_terms=1)
+
+    def test_scale_factor_overflow(self):
+        # Three generators at rate 300 give a scale factor of about exp(1798), past float64's
+        # exp(709.8). The error must be raised before any propagation starts.
+        qc = QuantumCircuit(1)
+        qc.rx(0.3, 0)
+        qc.append(PauliLindbladError(PauliList(["X", "Y", "Z"]), [300.0] * 3), [0])
+        with self.assertRaisesRegex(ValueError, "overflows float64"):
+            generate_noise_mitigating_observable(
+                qc, SparsePauliOp("Z"), max_err_terms=10, max_obs_terms=10
+            )
 
     def test_keep_k_largest(self):
         expected = (SparsePauliOp("I", 0 + 0j), 1.0)
