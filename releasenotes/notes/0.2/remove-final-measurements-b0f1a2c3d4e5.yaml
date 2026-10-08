@@ -1,0 +1,10 @@
+---
+fixes:
+  - |
+    The ``remove_final_measurements`` argument of
+    :func:`qiskit_addon_pna.pna._inject_learned_noise_to_boxed_circuit`
+    (and consequently of :func:`qiskit_addon_pna.generate_noise_mitigating_observable`)
+    is now honoured for boxes which carry an ``InjectNoise`` annotation.
+    Previously measurements inside the final box were only removed when the box
+    had no noise annotation, because the noise-injection branches unboxed every
+    instruction unconditionally.

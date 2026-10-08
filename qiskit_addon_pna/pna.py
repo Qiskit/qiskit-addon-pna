@@ -480,15 +480,29 @@ def _inject_learned_noise_to_boxed_circuit(
                 # The undressed box is needed in order to know where to inject the noise.
                 undressed_box = undress_box(box)
 
+                # The instructions which get unboxed below. When the user asked for the
+                # final measurements to be removed and this is the final box, the measure
+                # instructions are dropped. This is applied to boxes carrying a noise
+                # annotation as well, since a measurement never has one and would
+                # otherwise be unboxed unconditionally.
+                if remove_final_measurements and idx == last_instruction_idx:
+                    box_body = [
+                        instruction
+                        for instruction in box.body
+                        if instruction.operation.name != "measure"
+                    ]
+                else:
+                    box_body = list(box.body)
+
                 # The noise needs to be injected in proximity to the 2q-gate corresponding instructions.
                 # If the original box is 'left-dressed', start by adding the 1q-gate instructions.
                 # Then, handle noise injection and 2q-gates (order dependent on `place_noise_before`).
                 # If the box is `right-dressed`, first handle noise injections and 2q-gates (order
                 # dependent on `place_noise_before`), then add the 1q-gate instructions.
-                if box.body.data[0].operation.num_qubits == 1:
+                if box_body and box_body[0].operation.num_qubits == 1:
                     # First instruction is a 1q-gate => box is left dressed.
                     # Add the 1q-gates first.
-                    for internal_instruction in box.body:
+                    for internal_instruction in box_body:
                         if internal_instruction not in undressed_box.body:
                             unboxed_noisy_circuit.append(
                                 instruction=internal_instruction,
@@ -499,7 +513,7 @@ def _inject_learned_noise_to_boxed_circuit(
                         unboxed_noisy_circuit.append(noise_instruction, qargs=qargs)
 
                     # Add the 2q-gates
-                    for internal_instruction in box.body:
+                    for internal_instruction in box_body:
                         if internal_instruction in undressed_box.body:
                             unboxed_noisy_circuit.append(
                                 instruction=internal_instruction,
@@ -517,7 +531,7 @@ def _inject_learned_noise_to_boxed_circuit(
                             qargs=qargs,
                         )
                         # Add rest of 2q-gate and 1q-gate instructions in order
-                        for internal_instruction in box.body:
+                        for internal_instruction in box_body:
                             unboxed_noisy_circuit.append(
                                 instruction=internal_instruction,
                                 qargs=qargs,
@@ -525,7 +539,7 @@ def _inject_learned_noise_to_boxed_circuit(
                     # Inject noise (after)
                     if not inject_noise_before:
                         # Add the 2q-gate instructions in order
-                        for internal_instruction in box.body:
+                        for internal_instruction in box_body:
                             if internal_instruction in undressed_box.body:
                                 unboxed_noisy_circuit.append(
                                     instruction=internal_instruction,
@@ -539,7 +553,7 @@ def _inject_learned_noise_to_boxed_circuit(
                         )
 
                         # Add rest of 1q-gate instructions in order
-                        for internal_instruction in box.body:
+                        for internal_instruction in box_body:
                             if internal_instruction not in undressed_box.body:
                                 unboxed_noisy_circuit.append(
                                     instruction=internal_instruction,

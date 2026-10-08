@@ -18,7 +18,7 @@ import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import PauliLindbladMap, SparsePauliOp
 from qiskit_addon_pna import generate_noise_mitigating_observable
-from qiskit_addon_pna.pna import _keep_k_largest
+from qiskit_addon_pna.pna import _inject_learned_noise_to_boxed_circuit, _keep_k_largest
 from qiskit_aer import AerSimulator
 from qiskit_aer.noise.errors import PauliLindbladError
 from samplomatic.annotations import InjectNoise
@@ -169,6 +169,68 @@ class TestPNA(unittest.TestCase):
             generate_noise_mitigating_observable(qc, spo, max_err_terms=1, max_obs_terms=1)
         with self.assertRaises(ValueError):
             generate_noise_mitigating_observable(qc, spo, {}, max_err_terms=1, max_obs_terms=1)
+
+    def test_remove_final_measurements_in_noisy_box(self):
+        # Regression test for https://github.com/Qiskit/qiskit-addon-pna/issues/40
+        # `remove_final_measurements` used to be honoured only for boxes without a noise
+        # annotation, because the branches which inject the noise unboxed every
+        # instruction of the box unconditionally.
+        refs_to_plms = {"r0": PauliLindbladMap.from_list([("X", 0.01)])}
+
+        def _boxed_circuit_with_measure():
+            qc = QuantumCircuit(1, 1)
+            with qc.box([InjectNoise("r0")]):
+                qc.rz(0.1, 0)
+                qc.measure(0, 0)
+            return qc
+
+        # The default is to remove them, also from a noisy final box.
+        unboxed = _inject_learned_noise_to_boxed_circuit(
+            _boxed_circuit_with_measure(), refs_to_plms
+        )
+        assert "measure" not in unboxed.count_ops()
+        assert unboxed.count_ops().get("rz") == 1
+
+        # Asking for them to be kept must leave them untouched.
+        unboxed = _inject_learned_noise_to_boxed_circuit(
+            _boxed_circuit_with_measure(),
+            refs_to_plms,
+            remove_final_measurements=False,
+        )
+        assert unboxed.count_ops().get("measure") == 1
+
+    def test_remove_final_measurements_only_affects_final_box(self):
+        # Regression test for https://github.com/Qiskit/qiskit-addon-pna/issues/40
+        # A measure inside a box which is not the final one must never be removed.
+        refs_to_plms = {"r0": PauliLindbladMap.from_list([("X", 0.01)])}
+
+        qc = QuantumCircuit(1, 1)
+        with qc.box([InjectNoise("r0")]):
+            qc.rz(0.1, 0)
+            qc.measure(0, 0)
+        qc.barrier()
+        with qc.box([InjectNoise("r0")]):
+            qc.rz(0.2, 0)
+
+        unboxed = _inject_learned_noise_to_boxed_circuit(qc, refs_to_plms)
+        assert unboxed.count_ops().get("measure") == 1
+
+    def test_final_noisy_box_containing_only_measurements(self):
+        # Regression test for https://github.com/Qiskit/qiskit-addon-pna/issues/40
+        # Removing the final measurements can empty the body of the box, which must not
+        # raise when the left/right-dressed distinction is determined.
+        refs_to_plms = {"r0": PauliLindbladMap.from_list([("X", 0.01)])}
+
+        qc = QuantumCircuit(1, 1)
+        with qc.box([InjectNoise("r0")]):
+            qc.rz(0.1, 0)
+        qc.barrier()
+        with qc.box([InjectNoise("r0")]):
+            qc.measure(0, 0)
+
+        unboxed = _inject_learned_noise_to_boxed_circuit(qc, refs_to_plms)
+        assert "measure" not in unboxed.count_ops()
+        assert unboxed.count_ops().get("rz") == 1
 
     def test_keep_k_largest(self):
         expected = (SparsePauliOp("I", 0 + 0j), 1.0)
